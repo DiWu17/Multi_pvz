@@ -1,0 +1,458 @@
+[gd_scene format=3 uid="uid://ceq71xsqf5iyg"]
+
+[ext_resource type="Texture2D" uid="uid://d0gnsuf88om6q" path="res://assets/reanim/Zombie_boss_arm_upper2.png" id="0_fuck"]
+[ext_resource type="Animation" uid="uid://j63mp0vb8pka" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_enter.tres" id="1_anim"]
+[ext_resource type="Texture2D" uid="uid://cb7lvkchehhyj" path="res://assets/reanim/Zombie_boss_innerarm_lower.png" id="1_fuck"]
+[ext_resource type="Animation" uid="uid://3i561pegf8iu" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_idle.tres" id="2_anim"]
+[ext_resource type="Texture2D" uid="uid://bouk7snu2n3d8" path="res://assets/reanim/Zombie_boss_innerarm_fingerrope.png" id="2_fuck"]
+[ext_resource type="Animation" uid="uid://4abvbunb23yp" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_spawn_5.tres" id="3_anim"]
+[ext_resource type="Texture2D" uid="uid://c77q3t07btgx3" path="res://assets/reanim/Zombie_boss_innerarm_finger.png" id="3_fuck"]
+[ext_resource type="Animation" uid="uid://c3lfliq6q7ycs" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_spawn_4.tres" id="4_anim"]
+[ext_resource type="Texture2D" uid="uid://b61wa16xujdnk" path="res://assets/reanim/Zombie_boss_innerarm_hand.png" id="4_fuck"]
+[ext_resource type="Animation" uid="uid://c1308jw87gusx" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_spawn_3.tres" id="5_anim"]
+[ext_resource type="Texture2D" uid="uid://c533qswlsv8dw" path="res://assets/reanim/Zombie_boss_RVwheel.png" id="5_fuck"]
+[ext_resource type="Animation" uid="uid://1c0p0wna7l6o" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_spawn_2.tres" id="6_anim"]
+[ext_resource type="Texture2D" uid="uid://cj10wpko1fxuj" path="res://assets/reanim/Zombie_boss_rv.png" id="6_fuck"]
+[ext_resource type="Animation" uid="uid://davra72jh1acj" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_spawn_1.tres" id="7_anim"]
+[ext_resource type="Texture2D" uid="uid://cdrqid7xanb3t" path="res://assets/reanim/Zombie_boss_innerarm_thumb2.png" id="7_fuck"]
+[ext_resource type="Animation" uid="uid://dml7ogufe8o4y" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_bungee_1_enter.tres" id="8_anim"]
+[ext_resource type="Texture2D" uid="uid://dgcifib0510bl" path="res://assets/reanim/Zombie_boss_innerarm_thumb1.png" id="8_fuck"]
+[ext_resource type="Animation" uid="uid://b01qn0l25wu77" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_bungee_1_leave.tres" id="9_anim"]
+[ext_resource type="Texture2D" uid="uid://d22p4oxj6fvxt" path="res://assets/reanim/Zombie_boss_innerarm_upper.png" id="9_fuck"]
+[ext_resource type="Animation" uid="uid://cf7f1yqb3oks0" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_stomp_1.tres" id="10_anim"]
+[ext_resource type="Texture2D" uid="uid://yrcmd1nqpt8i" path="res://assets/reanim/Zombie_boss_foot.png" id="10_fuck"]
+[ext_resource type="Animation" uid="uid://dyytnvdvb3xee" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_stomp_2.tres" id="11_anim"]
+[ext_resource type="Texture2D" uid="uid://cq7u4mojd15e3" path="res://assets/reanim/Zombie_boss_legbits.png" id="11_fuck"]
+[ext_resource type="Animation" uid="uid://b3g8uxnuxaeue" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_stomp_3.tres" id="12_anim"]
+[ext_resource type="Texture2D" uid="uid://cpn0fqjqj12ah" path="res://assets/reanim/Zombie_boss_innerleg_upper.png" id="12_fuck"]
+[ext_resource type="Animation" uid="uid://crx478pqiq567" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_stomp_4.tres" id="13_anim"]
+[ext_resource type="Texture2D" uid="uid://bjxhbmwr06r3n" path="res://assets/reanim/Zombie_boss_leg_lower.png" id="13_fuck"]
+[ext_resource type="Animation" uid="uid://dx8o2ant35wk3" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_head_enter.tres" id="14_anim"]
+[ext_resource type="Texture2D" uid="uid://bxsncalumj0c" path="res://assets/reanim/Zombie_boss_lowerbody.png" id="14_fuck"]
+[ext_resource type="Animation" uid="uid://dwjt4p588ptgi" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_head_idle.tres" id="15_anim"]
+[ext_resource type="Texture2D" uid="uid://dmxrbe37acf4o" path="res://assets/reanim/Zombie_boss_outerleg_upper.png" id="15_fuck"]
+[ext_resource type="Animation" uid="uid://d1inomlbwlrv6" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_head_attack_1.tres" id="16_anim"]
+[ext_resource type="Animation" uid="uid://bpnxu8yv8oqwc" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_head_attack_2.tres" id="17_anim"]
+[ext_resource type="Animation" uid="uid://6ex536ga5dmp" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_head_attack_3.tres" id="18_anim"]
+[ext_resource type="Texture2D" uid="uid://b1g33eigvbf34" path="res://assets/reanim/Zombie_boss_innerjaw.png" id="18_fuck"]
+[ext_resource type="Animation" uid="uid://jrvk3ocu1qfp" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_head_attack_4.tres" id="19_anim"]
+[ext_resource type="Texture2D" uid="uid://bpi1pc7gdc7e3" path="res://assets/reanim/Zombie_boss_mouthglow.png" id="19_fuck"]
+[ext_resource type="Animation" uid="uid://cxor6w4xxhkdn" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_head_attack_5.tres" id="20_anim"]
+[ext_resource type="Texture2D" uid="uid://4a4nlhkc5nak" path="res://assets/reanim/Zombie_boss_mouthglow_red.png" id="20_fuck"]
+[ext_resource type="Animation" uid="uid://clc0k7hf4bt65" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_head_leave.tres" id="21_anim"]
+[ext_resource type="Texture2D" uid="uid://bql5giivcflcr" path="res://assets/reanim/Zombie_boss_jaw.png" id="21_fuck"]
+[ext_resource type="Animation" uid="uid://bsocpy2hb430h" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_death.tres" id="22_anim"]
+[ext_resource type="Texture2D" uid="uid://dk0ry1s32y2so" path="res://assets/reanim/Zombie_boss_eyeglow.png" id="22_fuck"]
+[ext_resource type="Animation" uid="uid://c3fqpmuqwyvks" path="res://animation/character/zombie/999_zombie_boss/Zombie_boss_RV_1.tres" id="23_anim"]
+[ext_resource type="Texture2D" uid="uid://baeptg7m3bq68" path="res://assets/reanim/Zombie_boss_eyeglow_red.png" id="23_fuck"]
+[ext_resource type="Texture2D" uid="uid://cbanmp4jcvjfb" path="res://assets/reanim/Zombie_boss_head2.png" id="24_fuck"]
+[ext_resource type="Texture2D" uid="uid://b5owucpyftf8c" path="res://assets/reanim/Zombie_boss_antenna.png" id="26_fuck"]
+[ext_resource type="Texture2D" uid="uid://dosj05ct71hmf" path="res://assets/reanim/Zombie_boss_head.png" id="28_fuck"]
+[ext_resource type="Texture2D" uid="uid://y7g8rfl3fp03" path="res://assets/reanim/Zombie_boss_outerarm_thumb2.png" id="29_fuck"]
+[ext_resource type="Texture2D" uid="uid://c74eawoq1s7t2" path="res://assets/reanim/Zombie_boss_outerarm_hand.png" id="30_fuck"]
+[ext_resource type="Texture2D" uid="uid://t8xlhlkacmq4" path="res://assets/reanim/Zombie_boss_outerarm_finger2.png" id="31_fuck"]
+[ext_resource type="Texture2D" uid="uid://dtklsfuxl3iw0" path="res://assets/reanim/Zombie_boss_outerarm_finger1.png" id="32_fuck"]
+[ext_resource type="Texture2D" uid="uid://dao8440gm8ep2" path="res://assets/reanim/Zombie_boss_outerarm_thumb1.png" id="33_fuck"]
+[ext_resource type="Texture2D" uid="uid://itotbpb0blnd" path="res://assets/reanim/Zombie_boss_outerarm_lower.png" id="34_fuck"]
+[ext_resource type="Texture2D" uid="uid://773rlnrhsldg" path="res://assets/reanim/Zombie_boss_outerarm_upper.png" id="35_fuck"]
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_7jecp"]
+_data = {
+&"Zombie_boss_RV_1": ExtResource("23_anim"),
+&"Zombie_boss_bungee_1_enter": ExtResource("8_anim"),
+&"Zombie_boss_bungee_1_leave": ExtResource("9_anim"),
+&"Zombie_boss_death": ExtResource("22_anim"),
+&"Zombie_boss_enter": ExtResource("1_anim"),
+&"Zombie_boss_head_attack_1": ExtResource("16_anim"),
+&"Zombie_boss_head_attack_2": ExtResource("17_anim"),
+&"Zombie_boss_head_attack_3": ExtResource("18_anim"),
+&"Zombie_boss_head_attack_4": ExtResource("19_anim"),
+&"Zombie_boss_head_attack_5": ExtResource("20_anim"),
+&"Zombie_boss_head_enter": ExtResource("14_anim"),
+&"Zombie_boss_head_idle": ExtResource("15_anim"),
+&"Zombie_boss_head_leave": ExtResource("21_anim"),
+&"Zombie_boss_idle": ExtResource("2_anim"),
+&"Zombie_boss_spawn_1": ExtResource("7_anim"),
+&"Zombie_boss_spawn_2": ExtResource("6_anim"),
+&"Zombie_boss_spawn_3": ExtResource("5_anim"),
+&"Zombie_boss_spawn_4": ExtResource("4_anim"),
+&"Zombie_boss_spawn_5": ExtResource("3_anim"),
+&"Zombie_boss_stomp_1": ExtResource("10_anim"),
+&"Zombie_boss_stomp_2": ExtResource("11_anim"),
+&"Zombie_boss_stomp_3": ExtResource("12_anim"),
+&"Zombie_boss_stomp_4": ExtResource("13_anim")
+}
+
+[node name="ZombieBoss" type="Node2D" unique_id=642676509]
+
+[node name="Boss_innerarm_bits" type="Sprite2D" parent="." unique_id=1263620716]
+visible = false
+position = Vector2(297.6, -233.4)
+rotation = 0.354302
+scale = Vector2(0.795, 0.894)
+texture = ExtResource("0_fuck")
+centered = false
+
+[node name="Boss_innerarm_lower" type="Sprite2D" parent="." unique_id=288824202]
+visible = false
+position = Vector2(304.6, -200)
+rotation = 1.089085
+scale = Vector2(0.795, 0.795)
+texture = ExtResource("1_fuck")
+centered = false
+
+[node name="Boss_innerarm_finger4" type="Sprite2D" parent="." unique_id=82726441]
+visible = false
+position = Vector2(141.3, -57.5)
+rotation = 1.260128
+scale = Vector2(0.618, 0.679)
+texture = ExtResource("2_fuck")
+centered = false
+
+[node name="Boss_innerarm_finger2" type="Sprite2D" parent="." unique_id=397306351]
+visible = false
+position = Vector2(121.9, -103.1)
+rotation = 1.460841
+scale = Vector2(0.793, 0.865)
+texture = ExtResource("3_fuck")
+centered = false
+
+[node name="Boss_innerarm_finger1" type="Sprite2D" parent="." unique_id=1079670177]
+visible = false
+position = Vector2(115.7, -139.5)
+rotation = 1.576032
+scale = Vector2(0.794, 0.794)
+texture = ExtResource("2_fuck")
+centered = false
+
+[node name="Boss_innerarm_finger3" type="Sprite2D" parent="." unique_id=1587957442]
+visible = false
+position = Vector2(127.2, -76.2)
+rotation = 1.410226
+scale = Vector2(0.676, 0.712)
+texture = ExtResource("2_fuck")
+centered = false
+
+[node name="Boss_innerarm_hand" type="Sprite2D" parent="." unique_id=2145637312]
+visible = false
+position = Vector2(199.1, -160.2)
+rotation = 1.518436
+scale = Vector2(0.794, 0.794)
+texture = ExtResource("4_fuck")
+centered = false
+
+[node name="Boss_RV_wheel1" type="Sprite2D" parent="." unique_id=1841065360]
+visible = false
+position = Vector2(-179.8, 19.7)
+rotation = 0.013963
+scale = Vector2(0.9, 0.9)
+texture = ExtResource("5_fuck")
+centered = false
+
+[node name="Boss_RV_wheel2" type="Sprite2D" parent="." unique_id=1207825166]
+visible = false
+position = Vector2(-256.3, 135.3)
+rotation = 0.013963
+scale = Vector2(0.9, 0.9)
+texture = ExtResource("5_fuck")
+centered = false
+
+[node name="Boss_RV" type="Sprite2D" parent="." unique_id=1862735896]
+visible = false
+position = Vector2(-381.8, 123.3)
+rotation = -1.015782
+scale = Vector2(0.897, 0.897)
+texture = ExtResource("6_fuck")
+centered = false
+
+[node name="Boss_innerarm_thumb2" type="Sprite2D" parent="." unique_id=1483326106]
+visible = false
+position = Vector2(176.3, -144.5)
+rotation = 1.518436
+scale = Vector2(0.794, 0.794)
+texture = ExtResource("7_fuck")
+centered = false
+
+[node name="Boss_innerarm_thumb1" type="Sprite2D" parent="." unique_id=1700969529]
+visible = false
+position = Vector2(192.7, -143.5)
+rotation = 1.518436
+scale = Vector2(0.794, 0.794)
+texture = ExtResource("8_fuck")
+centered = false
+
+[node name="Boss_innerarm_upper" type="Sprite2D" parent="." unique_id=52943008]
+visible = false
+position = Vector2(316.3, -367.7)
+rotation = 0.354302
+scale = Vector2(0.795, 0.795)
+texture = ExtResource("9_fuck")
+centered = false
+
+[node name="Boss_innerleg_foot" type="Sprite2D" parent="." unique_id=781016412]
+position = Vector2(661.3, 104.8)
+scale = Vector2(0.65, 0.65)
+texture = ExtResource("10_fuck")
+centered = false
+
+[node name="Boss_innerleg_bits" type="Sprite2D" parent="." unique_id=806923309]
+position = Vector2(747.1, 4.3)
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("11_fuck")
+centered = false
+
+[node name="Boss_innerleg_upper" type="Sprite2D" parent="." unique_id=1203946617]
+position = Vector2(738.1, -129.9)
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("12_fuck")
+centered = false
+
+[node name="Boss_innerleg_lower" type="Sprite2D" parent="." unique_id=1254150879]
+position = Vector2(714.8, 3.4)
+scale = Vector2(0.65, 0.65)
+texture = ExtResource("13_fuck")
+centered = false
+
+[node name="Boss_body2" type="Sprite2D" parent="." unique_id=1711683169]
+position = Vector2(633.3, -165.6)
+rotation = 6.115634
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("14_fuck")
+centered = false
+
+[node name="Boss_outerleg_foot" type="Sprite2D" parent="." unique_id=1449542495]
+position = Vector2(677.5, 278)
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("10_fuck")
+centered = false
+
+[node name="Boss_outerleg_bits" type="Sprite2D" parent="." unique_id=1399345868]
+position = Vector2(781.3, 151.1)
+texture = ExtResource("11_fuck")
+centered = false
+
+[node name="Boss_outerleg_upper" type="Sprite2D" parent="." unique_id=941015857]
+position = Vector2(766, -23.7)
+scale = Vector2(0.8, 0.891)
+texture = ExtResource("15_fuck")
+centered = false
+
+[node name="Boss_outerleg_lower" type="Sprite2D" parent="." unique_id=800927587]
+position = Vector2(742.1, 150.5)
+scale = Vector2(0.8, 0.8)
+texture = ExtResource("13_fuck")
+centered = false
+
+[node name="Boss_body1" type="Sprite2D" parent="." unique_id=617899788]
+visible = false
+position = Vector2(582.5055, -460.57166)
+rotation = 0.0099184755
+scale = Vector2(0.796, 0.796)
+centered = false
+
+[node name="Boss_neck" type="Sprite2D" parent="." unique_id=651524681]
+visible = false
+position = Vector2(838.1, -168.2)
+rotation = -0.029671
+scale = Vector2(0.797, 0.797)
+centered = false
+
+[node name="Boss_innerjaw" type="Sprite2D" parent="." unique_id=875807060]
+visible = false
+position = Vector2(838.2, -104.7)
+rotation = 0.003491
+scale = Vector2(1.002, 0.989)
+skew = 0.0226889
+texture = ExtResource("18_fuck")
+centered = false
+
+[node name="Boss_mouthglow" type="Sprite2D" parent="." unique_id=1547273345]
+visible = false
+position = Vector2(845.3, -104.5)
+rotation = 0.003491
+scale = Vector2(1.002, 0.989)
+skew = 0.0226889
+texture = ExtResource("19_fuck")
+centered = false
+
+[node name="Boss_mouthglow_red" type="Sprite2D" parent="." unique_id=954129806]
+visible = false
+self_modulate = Color(1, 1, 1, 0.31168145)
+position = Vector2(568.5646, 36.44204)
+rotation = -0.050615
+scale = Vector2(0.955, 0.9893097)
+texture = ExtResource("20_fuck")
+centered = false
+
+[node name="Boss_jaw" type="Sprite2D" parent="." unique_id=1286827973]
+visible = false
+position = Vector2(814.5, -88.9)
+rotation = 0.003491
+scale = Vector2(0.802, 0.791)
+skew = 0.0226889
+texture = ExtResource("21_fuck")
+centered = false
+
+[node name="Boss_eyeglow" type="Sprite2D" parent="." unique_id=608062295]
+visible = false
+position = Vector2(809.8, -99.2)
+scale = Vector2(0.796, 0.796)
+texture = ExtResource("22_fuck")
+centered = false
+
+[node name="Boss_eyeglow_red" type="Sprite2D" parent="." unique_id=917059258]
+visible = false
+position = Vector2(526.4562, 18.453981)
+rotation = -0.06752736
+scale = Vector2(0.795, 0.796)
+skew = -0.00054044224
+texture = ExtResource("23_fuck")
+centered = false
+
+[node name="Boss_head2" type="Sprite2D" parent="." unique_id=191246784]
+visible = false
+position = Vector2(834.4, -165.3)
+scale = Vector2(0.796, 0.796)
+texture = ExtResource("24_fuck")
+centered = false
+
+[node name="Boss_eyeglow_black" type="Sprite2D" parent="." unique_id=1876943346]
+visible = false
+centered = false
+
+[node name="Boss_antenna2" type="Sprite2D" parent="." unique_id=1481296944]
+visible = false
+position = Vector2(780.3, -133.1)
+rotation = -0.176278
+scale = Vector2(0.797, 0.797)
+texture = ExtResource("26_fuck")
+centered = false
+
+[node name="Boss_head" type="Sprite2D" parent="." unique_id=675056460]
+visible = false
+position = Vector2(804, -159.7)
+scale = Vector2(0.796, 0.796)
+texture = ExtResource("28_fuck")
+centered = false
+
+[node name="Boss_antenna" type="Sprite2D" parent="." unique_id=1242159016]
+visible = false
+position = Vector2(1005.3, -134)
+scale = Vector2(0.995, 0.995)
+texture = ExtResource("26_fuck")
+centered = false
+
+[node name="Boss_outerarm_thumb2" type="Sprite2D" parent="." unique_id=1040103808]
+visible = false
+position = Vector2(835.3927, 20.994675)
+rotation = 0.081773706
+scale = Vector2(0.859, 0.90452075)
+texture = ExtResource("29_fuck")
+centered = false
+
+[node name="Boss_outerarm_hand" type="Sprite2D" parent="." unique_id=1787968214]
+visible = false
+position = Vector2(894.601, 3.5278792)
+rotation = 0.031995516
+scale = Vector2(0.794, 0.794)
+texture = ExtResource("30_fuck")
+centered = false
+
+[node name="Boss-outerarm_finger4" type="Sprite2D" parent="." unique_id=1964792512]
+visible = false
+position = Vector2(955.02216, 149.36523)
+rotation = -0.45236972
+scale = Vector2(0.664, 0.609)
+texture = ExtResource("31_fuck")
+centered = false
+
+[node name="Boss-outerarm_knuckle4" type="Sprite2D" parent="." unique_id=768364468]
+visible = false
+position = Vector2(983.8346, 129.93391)
+rotation = -0.610286
+scale = Vector2(0.534, 0.5865208)
+texture = ExtResource("32_fuck")
+centered = false
+
+[node name="Boss-outerarm_finger3" type="Sprite2D" parent="." unique_id=377269225]
+visible = false
+position = Vector2(923.62634, 144.24863)
+rotation = -0.28656372
+scale = Vector2(0.687, 0.7035208)
+texture = ExtResource("31_fuck")
+centered = false
+
+[node name="Boss-outerarm_knuckle3" type="Sprite2D" parent="." unique_id=741934529]
+visible = false
+position = Vector2(956.7867, 124.26523)
+rotation = -0.4174627
+scale = Vector2(0.566, 0.661)
+texture = ExtResource("32_fuck")
+centered = false
+
+[node name="Boss-outerarm_finger2" type="Sprite2D" parent="." unique_id=972276599]
+visible = false
+position = Vector2(883.7263, 137.42787)
+rotation = -0.24816571
+scale = Vector2(0.73852074, 0.80752075)
+texture = ExtResource("31_fuck")
+centered = false
+
+[node name="Boss-outerarm_knuckle2" type="Sprite2D" parent="." unique_id=1241874727]
+visible = false
+position = Vector2(915.5867, 118.292404)
+rotation = -0.3511407
+scale = Vector2(0.74352074, 0.79252076)
+texture = ExtResource("32_fuck")
+centered = false
+
+[node name="Boss-outerarm_finger1" type="Sprite2D" parent="." unique_id=610107782]
+visible = false
+position = Vector2(848.295, 101.20713)
+rotation = 0.023268996
+scale = Vector2(0.698, 0.7675208)
+texture = ExtResource("31_fuck")
+centered = false
+
+[node name="Boss-outerarm_knuckle1" type="Sprite2D" parent="." unique_id=278627787]
+visible = false
+position = Vector2(885.55536, 89.92788)
+rotation = 0.081773706
+scale = Vector2(0.75652075, 0.756)
+texture = ExtResource("32_fuck")
+centered = false
+
+[node name="Boss_outerarm_thumb1" type="Sprite2D" parent="." unique_id=313034890]
+visible = false
+position = Vector2(873.54065, 24.615429)
+rotation = 0.081773706
+scale = Vector2(0.859, 0.90452075)
+texture = ExtResource("33_fuck")
+centered = false
+
+[node name="Boss_outerarm_bits" type="Sprite2D" parent="." unique_id=485682517]
+visible = false
+position = Vector2(930.5761, -131.04643)
+rotation = -0.079666026
+scale = Vector2(0.7955208, 0.7955208)
+texture = ExtResource("0_fuck")
+centered = false
+
+[node name="Boss_outerarm_lower" type="Sprite2D" parent="." unique_id=1626974443]
+visible = false
+position = Vector2(925.79236, -143.31175)
+rotation = 0.11668023
+scale = Vector2(0.7945208, 0.8555208)
+texture = ExtResource("34_fuck")
+centered = false
+
+[node name="Boss_outerarm_upper" type="Sprite2D" parent="." unique_id=434429596]
+visible = false
+position = Vector2(865.3919, -337.8491)
+rotation = -0.14170071
+scale = Vector2(0.795, 0.795)
+texture = ExtResource("35_fuck")
+centered = false
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1511540918]
+libraries/ = SubResource("AnimationLibrary_7jecp")
