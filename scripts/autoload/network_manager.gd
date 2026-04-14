@@ -13,6 +13,8 @@ signal server_connected
 signal server_disconnected
 ## 连接失败
 signal connection_failed
+## 网络质量更新（客户端到 Host）
+signal net_stats_updated(ping_ms: int, packet_loss: float)
 ## 所有玩家准备完毕
 signal all_players_ready
 ## 游戏开始
@@ -26,6 +28,9 @@ signal relay_room_created(room_code: String)
 #region 常量
 const DEFAULT_PORT := 27015
 const MAX_PLAYERS := 4
+const NET_PROBE_INTERVAL := 1.0
+const NET_PROBE_WINDOW_SIZE := 20
+const NET_PROBE_TIMEOUT_MS := 2500
 #endregion
 
 #region 玩家数据
@@ -47,6 +52,13 @@ var is_multiplayer: bool = false
 var player_count: int:
 	get:
 		return players.size()
+
+## 本地网络质量（仅客户端有效）
+var _net_ping_ms: int = -1
+var _net_packet_loss: float = 0.0
+var _net_probe_seq: int = 0
+var _net_probe_records: Array[Dictionary] = []
+var _net_probe_timer: Timer = null
 #endregion
 
 #region 大厅状态
@@ -68,9 +80,16 @@ func _ready() -> void:
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
 
+	_net_probe_timer = Timer.new()
+	_net_probe_timer.wait_time = NET_PROBE_INTERVAL
+	_net_probe_timer.autostart = true
+	_net_probe_timer.timeout.connect(_on_net_probe_timer_timeout)
+	add_child(_net_probe_timer)
+
 #region 连接管理
 ## 创建房间（Host）
 func create_server(port: int = DEFAULT_PORT, player_name: String = "Host") -> Error:
+	_reset_net_stats()
 	local_player_name = player_name
 	var peer = ENetMultiplayerPeer.new()
 	var error = peer.create_server(port, MAX_PLAYERS)
@@ -94,6 +113,7 @@ func create_server(port: int = DEFAULT_PORT, player_name: String = "Host") -> Er
 
 ## 通过中继服务器创建房间（Host）
 func create_relay_host(relay_url: String, player_name: String = "Host") -> Error:
+	_reset_net_stats()
 	local_player_name = player_name
 	var peer = RelayMultiplayerPeer.new()
 	var error = peer.create_relay_host(relay_url, player_name)
@@ -111,6 +131,7 @@ func create_relay_host(relay_url: String, player_name: String = "Host") -> Error
 
 ## 通过中继服务器加入房间（Client）
 func join_relay_room(relay_url: String, room_code: String, player_name: String = "Player") -> Error:
+	_reset_net_stats()
 	local_player_name = player_name
 	var peer = RelayMultiplayerPeer.new()
 	var error = peer.join_relay_room(relay_url, room_code, player_name)
@@ -144,6 +165,7 @@ func _on_relay_error(message: String) -> void:
 
 ## 加入房间（Client）
 func join_server(address: String, port: int = DEFAULT_PORT, player_name: String = "Player") -> Error:
+	_reset_net_stats()
 	local_player_name = player_name
 	var peer = ENetMultiplayerPeer.new()
 	var error = peer.create_client(address, port)
@@ -158,6 +180,7 @@ func join_server(address: String, port: int = DEFAULT_PORT, player_name: String 
 
 ## 断开连接
 func disconnect_from_server() -> void:
+	_reset_net_stats()
 	if multiplayer.multiplayer_peer:
 		multiplayer.multiplayer_peer.close()
 		multiplayer.multiplayer_peer = null
@@ -188,6 +211,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 func _on_connected_to_server() -> void:
 	GameLogger.log_net("已连接到服务器")
 	lobby_state = LobbyState.IN_LOBBY
+	_reset_net_stats()
 	server_connected.emit()
 	# 向服务器注册自己
 	_request_register.rpc_id(1, {
@@ -196,16 +220,108 @@ func _on_connected_to_server() -> void:
 
 func _on_connection_failed() -> void:
 	GameLogger.error("连接失败")
+	_reset_net_stats()
 	is_multiplayer = false
 	lobby_state = LobbyState.IDLE
 	connection_failed.emit()
 
 func _on_server_disconnected() -> void:
 	GameLogger.error("服务器断开")
+	_reset_net_stats()
 	players.clear()
 	is_multiplayer = false
 	lobby_state = LobbyState.IDLE
 	server_disconnected.emit()
+#endregion
+
+#region 网络质量检测
+func _on_net_probe_timer_timeout() -> void:
+	if not is_multiplayer:
+		return
+	if multiplayer.is_server():
+		return
+	if lobby_state == LobbyState.IDLE:
+		return
+
+	_net_probe_seq += 1
+	var now_ms := Time.get_ticks_msec()
+	_net_probe_records.append({
+		"seq": _net_probe_seq,
+		"send_ms": now_ms,
+		"acked": false,
+		"rtt": -1,
+	})
+	while _net_probe_records.size() > NET_PROBE_WINDOW_SIZE * 2:
+		_net_probe_records.pop_front()
+
+	_net_probe_ping.rpc_id(1, _net_probe_seq, now_ms)
+	_recalculate_net_stats()
+
+func _reset_net_stats() -> void:
+	_net_probe_seq = 0
+	_net_probe_records.clear()
+	_net_ping_ms = -1
+	_net_packet_loss = 0.0
+	net_stats_updated.emit(_net_ping_ms, _net_packet_loss)
+
+func _recalculate_net_stats() -> void:
+	var now_ms := Time.get_ticks_msec()
+	var acked_rtts: Array[int] = []
+	var eligible_count := 0
+	var lost_count := 0
+
+	var begin := maxi(0, _net_probe_records.size() - NET_PROBE_WINDOW_SIZE)
+	for i in range(begin, _net_probe_records.size()):
+		var rec: Dictionary = _net_probe_records[i]
+		if rec.get("acked", false):
+			eligible_count += 1
+			acked_rtts.append(int(rec.get("rtt", -1)))
+		elif now_ms - int(rec.get("send_ms", 0)) >= NET_PROBE_TIMEOUT_MS:
+			eligible_count += 1
+			lost_count += 1
+
+	if not acked_rtts.is_empty():
+		var sum_rtt := 0
+		for rtt in acked_rtts:
+			sum_rtt += maxi(rtt, 0)
+		_net_ping_ms = int(round(float(sum_rtt) / float(acked_rtts.size())))
+	else:
+		_net_ping_ms = -1
+
+	if eligible_count > 0:
+		_net_packet_loss = clampf(float(lost_count) / float(eligible_count), 0.0, 1.0)
+	else:
+		_net_packet_loss = 0.0
+
+	net_stats_updated.emit(_net_ping_ms, _net_packet_loss)
+
+## Client -> Host 探测包
+@rpc("any_peer", "unreliable")
+func _net_probe_ping(seq: int, client_send_ms: int) -> void:
+	if not multiplayer.is_server():
+		return
+	var sender_id := multiplayer.get_remote_sender_id()
+	if sender_id <= 0:
+		return
+	_net_probe_pong.rpc_id(sender_id, seq, client_send_ms)
+
+## Host -> Client 探测回包
+@rpc("authority", "unreliable")
+func _net_probe_pong(seq: int, client_send_ms: int) -> void:
+	if multiplayer.is_server():
+		return
+	for rec in _net_probe_records:
+		if int(rec.get("seq", -1)) == seq:
+			rec["acked"] = true
+			rec["rtt"] = maxi(0, Time.get_ticks_msec() - client_send_ms)
+			break
+	_recalculate_net_stats()
+
+func get_net_ping_ms() -> int:
+	return _net_ping_ms
+
+func get_net_packet_loss() -> float:
+	return _net_packet_loss
 #endregion
 
 #region 玩家注册（RPC）

@@ -13,6 +13,7 @@ var sync_timer: Timer
 
 ## 光标同步频率 (10Hz)
 const SYNC_INTERVAL := 0.1
+const NET_HUD_UPDATE_INTERVAL := 0.5
 
 ## 铲子纹理
 const SHOVEL_TEXTURE := preload("res://assets/image/ui/ui_card/Shovel.png")
@@ -32,6 +33,12 @@ var _peer_cell_ghosts: Dictionary = {}
 ## 光标插值用 Tween {peer_id: Tween}
 var _peer_tweens: Dictionary = {}
 
+## 网络状态 HUD
+var _net_hud_layer: CanvasLayer = null
+var _net_status_label: Label = null
+var _disconnect_label: Label = null
+var _net_hud_timer: Timer = null
+
 func _ready() -> void:
 	if not NetworkManager.is_multiplayer:
 		return
@@ -47,13 +54,81 @@ func _ready() -> void:
 	sync_timer.timeout.connect(_on_sync_timer_timeout)
 	add_child(sync_timer)
 
+	_create_network_hud()
+	NetworkManager.net_stats_updated.connect(_on_net_stats_updated)
+	NetworkManager.server_disconnected.connect(_on_disconnected)
+	NetworkManager.connection_failed.connect(_on_disconnected)
+
 func _exit_tree() -> void:
 	if EventBus.has_signal("remote_cursor_update"):
 		EventBus.unsubscribe("remote_cursor_update", _on_remote_cursor_update)
+	if NetworkManager.net_stats_updated.is_connected(_on_net_stats_updated):
+		NetworkManager.net_stats_updated.disconnect(_on_net_stats_updated)
+	if NetworkManager.server_disconnected.is_connected(_on_disconnected):
+		NetworkManager.server_disconnected.disconnect(_on_disconnected)
+	if NetworkManager.connection_failed.is_connected(_on_disconnected):
+		NetworkManager.connection_failed.disconnect(_on_disconnected)
 	# 清除所有虚影
 	_peer_highlighted_cells.clear()
 	for pid in _peer_cell_ghosts.keys():
 		_hide_cell_ghost(pid)
+
+func _create_network_hud() -> void:
+	_net_hud_layer = CanvasLayer.new()
+	_net_hud_layer.name = "NetworkHudLayer"
+	add_child(_net_hud_layer)
+
+	var root = Control.new()
+	root.name = "NetworkHudRoot"
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_net_hud_layer.add_child(root)
+
+	_net_status_label = Label.new()
+	_net_status_label.name = "NetworkStatusLabel"
+	_net_status_label.position = Vector2(16, 12)
+	_net_status_label.add_theme_font_size_override("font_size", 14)
+	_net_status_label.add_theme_color_override("font_color", Color(0.9, 1.0, 0.9))
+	root.add_child(_net_status_label)
+
+	_disconnect_label = Label.new()
+	_disconnect_label.name = "DisconnectLabel"
+	_disconnect_label.position = Vector2(16, 34)
+	_disconnect_label.add_theme_font_size_override("font_size", 16)
+	_disconnect_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
+	_disconnect_label.text = ""
+	_disconnect_label.visible = false
+	root.add_child(_disconnect_label)
+
+	_net_hud_timer = Timer.new()
+	_net_hud_timer.wait_time = NET_HUD_UPDATE_INTERVAL
+	_net_hud_timer.autostart = true
+	_net_hud_timer.timeout.connect(_update_net_hud_text)
+	add_child(_net_hud_timer)
+
+	_update_net_hud_text()
+
+func _update_net_hud_text() -> void:
+	if not is_instance_valid(_net_status_label):
+		return
+	if NetworkManager.is_server():
+		_net_status_label.text = "联机状态: Host"
+		return
+
+	var ping_ms = NetworkManager.get_net_ping_ms()
+	var loss = NetworkManager.get_net_packet_loss() * 100.0
+	var ping_text = "--"
+	if ping_ms >= 0:
+		ping_text = "%dms" % ping_ms
+	_net_status_label.text = "Ping: %s  丢包: %.1f%%" % [ping_text, loss]
+
+func _on_net_stats_updated(_ping_ms: int, _packet_loss: float) -> void:
+	_update_net_hud_text()
+
+func _on_disconnected() -> void:
+	if is_instance_valid(_disconnect_label):
+		_disconnect_label.text = "网络连接已断开，请返回大厅重连"
+		_disconnect_label.visible = true
 
 #region 本地光标状态发送
 ## 定时发送本地光标状态
