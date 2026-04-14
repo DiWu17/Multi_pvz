@@ -24,6 +24,21 @@ var is_body_up_from_ground := false
 ## 多人模式：唯一网络标识（由 ZombieManager 分配）
 var network_id: int = -1
 
+#region 多人模式：网络同步插值
+## 客户端是否由网络驱动（客户端上的僵尸为 true）
+var is_network_puppet: bool = false
+## 网络目标位置（客户端插值用）
+var _net_target_pos: Vector2 = Vector2.ZERO
+## 网络目标 HP（客户端同步用）
+var _net_target_hp: int = -1
+var _net_target_hp_armor1: int = -1
+var _net_target_hp_armor2: int = -1
+## 网络同步的攻击状态
+var _net_is_attack: bool = false
+## 插值速度（每秒追赶比例）
+const NET_INTERP_SPEED: float = 15.0
+#endregion
+
 @export_subgroup("僵尸铁器")
 ## 铁器种类
 enum IronType{
@@ -206,6 +221,47 @@ func ready_norm():
 
 	## 舞王僵尸会报错，当前帧最后调用
 	call_deferred("judge_battlefield_update_speed")
+
+	## 多人模式：客户端标记为网络傀儡，禁用本地移动和攻击
+	if NetworkManager.is_multiplayer and not NetworkManager.is_server():
+		is_network_puppet = true
+		_net_target_pos = global_position
+		## 禁用攻击组件（Host 驱动战斗逻辑）
+		attack_component.disable_component(ComponentNormBase.E_IsEnableFactor.Character)
+		## 禁用移动组件（位置由网络同步驱动）
+		move_component.disable_component(ComponentNormBase.E_IsEnableFactor.Character)
+		## 防止客户端子弹击杀僵尸（死亡由 Host 广播），设置极低死亡阈值
+		hp_component.set_death_hp(-99999)
+
+## 客户端网络插值：平滑追赶 Host 同步的位置
+func _physics_process(delta: float) -> void:
+	if not is_network_puppet or is_death:
+		return
+	## 插值追赶目标位置
+	var diff = _net_target_pos - global_position
+	if diff.length() > 1.0:
+		global_position += diff * minf(NET_INTERP_SPEED * delta, 1.0)
+	else:
+		global_position = _net_target_pos
+
+## 客户端接收 Host 同步的状态
+func apply_network_state(pos_x: float, pos_y: float, hp: int, hp_a1: int, hp_a2: int, attack: bool) -> void:
+	_net_target_pos = Vector2(pos_x, pos_y)
+	## HP 校正（仅向下同步，防止客户端 HP 高于 Host）
+	if hp >= 0:
+		_net_target_hp = hp
+		if hp_component.curr_hp > hp:
+			hp_component.curr_hp = hp
+	## 防具 HP 校正
+	if hp_component is HpComponentZombie:
+		var hp_z := hp_component as HpComponentZombie
+		if hp_a1 >= 0 and hp_z.curr_hp_armor1 > hp_a1:
+			hp_z.curr_hp_armor1 = hp_a1
+		if hp_a2 >= 0 and hp_z.curr_hp_armor2 > hp_a2:
+			hp_z.curr_hp_armor2 = hp_a2
+	## 攻击状态同步（驱动动画切换）
+	if attack != is_attack:
+		is_attack = attack
 
 ## 两栖类僵尸body变化
 func zombie_row_type_both_body_update():

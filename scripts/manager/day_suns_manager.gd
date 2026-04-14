@@ -120,9 +120,9 @@ func on_sun_collected_network(sun_id: int) -> void:
 		## 如果 sun.collected 已为 true，说明是本地玩家点击的，动画会自行处理销毁
 
 ## 多人模式：从网络生成植物产生的阳光（客户端调用）
-func spawn_plant_sun_from_network(sun_id: int, pos: Vector2, rand_x: float) -> void:
+func spawn_plant_sun_from_network(sun_id: int, pos: Vector2, rand_x: float, sun_val: int = 25) -> void:
 	var new_sun:Sun = SceneRegistry.SUN.instantiate()
-	new_sun.init_sun(25, pos)
+	new_sun.init_sun(sun_val, pos)
 	Global.main_game.suns.add_child(new_sun)
 	new_sun.set_meta("sun_id", sun_id)
 	active_suns[sun_id] = new_sun

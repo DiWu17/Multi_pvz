@@ -136,6 +136,8 @@ var is_save_game_data_on_init:=false
 var is_multiplayer: bool = false
 ## 多人模式玩家数量
 var multiplayer_player_count: int = 1
+## 多人模式光标管理器
+var multiplayer_cursor_manager: MultiplayerCursorManager = null
 
 #endregion
 
@@ -265,6 +267,11 @@ func init_manager():
 	background_manager.init_manager()
 	drop_item_manager.init_manager()
 	day_suns_manager.init_manager()
+	# 多人模式：创建光标管理器
+	if is_multiplayer:
+		multiplayer_cursor_manager = MultiplayerCursorManager.new()
+		multiplayer_cursor_manager.name = "MultiplayerCursorManager"
+		add_child(multiplayer_cursor_manager)
 	print("info:管理器初始化完成")
 
 ## 信号连接

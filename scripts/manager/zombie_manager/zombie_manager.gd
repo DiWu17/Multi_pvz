@@ -63,6 +63,13 @@ var ice_timer:Timer
 
 signal signal_curr_zombie_num_change(num:int)
 
+#region 多人模式：高频状态同步
+## 帧计数器，用于控制同步频率
+var _sync_frame_counter: int = 0
+## 同步间隔帧数（每3帧同步一次 ≈ 20Hz@60fps）
+const SYNC_FRAME_INTERVAL: int = 3
+#endregion
+
 func _ready():
 	## 注册事件总线
 	EventBus.subscribe("ice_all_zombie", ice_all_zombie)
@@ -85,6 +92,41 @@ func _ready():
 
 		var row_zombies:Array[Zombie000Base] = []
 		all_zombies_2d.append(row_zombies)
+
+## Host 端高频同步僵尸状态给客户端
+func _physics_process(_delta: float) -> void:
+	if not NetworkManager.is_multiplayer or not NetworkManager.is_server():
+		return
+	_sync_frame_counter += 1
+	if _sync_frame_counter < SYNC_FRAME_INTERVAL:
+		return
+	_sync_frame_counter = 0
+
+	if all_zombies_1d.is_empty():
+		return
+
+	## 构建同步数据：[net_id, pos_x, pos_y, hp, hp_a1, hp_a2, is_attack]
+	var data: Array = []
+	for zombie in all_zombies_1d:
+		if not is_instance_valid(zombie) or zombie.is_death or zombie.network_id < 0:
+			continue
+		var hp_a1: int = 0
+		var hp_a2: int = 0
+		if zombie.hp_component is HpComponentZombie:
+			var hp_z := zombie.hp_component as HpComponentZombie
+			hp_a1 = hp_z.curr_hp_armor1
+			hp_a2 = hp_z.curr_hp_armor2
+		data.append([
+			zombie.network_id,
+			zombie.global_position.x,
+			zombie.global_position.y,
+			zombie.hp_component.curr_hp,
+			hp_a1,
+			hp_a2,
+			zombie.is_attack,
+		])
+	if data.size() > 0:
+		NetworkManager.sync_zombie_states.rpc(data)
 
 ## 初始僵尸管理器
 func init_manager() -> void:
@@ -194,6 +236,10 @@ func _on_zombie_hypno(zombie:Zombie000Base):
 	for conn in conns:
 		zombie.signal_zombie_hp_loss.disconnect(conn.callable)
 	all_zombies_be_hypno.append(zombie)
+
+	## 多人模式：Host 广播僵尸被魅惑
+	if main_game.is_multiplayer and NetworkManager.is_server() and zombie.network_id >= 0:
+		NetworkManager.broadcast_zombie_hypno.rpc(zombie.network_id)
 
 	## 如果到了最后一波刷新,且最后一个僵尸被魅惑
 	if is_end_wave and curr_zombie_num == 0:
@@ -394,6 +440,9 @@ func jalapeno_bomb_lane_zombie(lane:int):
 
 ## 三叶草吹走空中僵尸
 func blover_blow_away_in_sky_zombie():
+	## 多人模式客户端不处理（Host 会广播僵尸死亡），避免客户端直接 queue_free 导致崩溃
+	if NetworkManager.is_multiplayer and not NetworkManager.is_server():
+		return
 	for zombie_row:Array in all_zombies_2d:
 		if zombie_row.is_empty():
 			continue

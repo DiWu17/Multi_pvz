@@ -629,3 +629,31 @@ func _load_game_data_create_plant(game_data_plant):
 	if plant != null:
 		plant.load_game_data_plant(game_data_plant)
 #endregion
+
+#region 远端玩家格子高亮
+## 当前活跃的远端高亮 {peer_id: ColorRect}
+var _remote_highlights: Dictionary = {}
+
+## 显示某玩家的远端高亮边框
+func show_remote_highlight(peer_id: int, color: Color) -> void:
+	if _remote_highlights.has(peer_id):
+		# 更新颜色即可
+		_remote_highlights[peer_id].color = Color(color, 0.25)
+		_remote_highlights[peer_id].visible = true
+		return
+
+	var highlight = ColorRect.new()
+	highlight.name = "RemoteHighlight_%d" % peer_id
+	highlight.color = Color(color, 0.25)
+	highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	highlight.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(highlight)
+	# 确保在 Button 下方，不影响点击
+	move_child(highlight, 0)
+	_remote_highlights[peer_id] = highlight
+
+## 隐藏某玩家的远端高亮边框
+func hide_remote_highlight(peer_id: int) -> void:
+	if _remote_highlights.has(peer_id):
+		_remote_highlights[peer_id].visible = false
+#endregion

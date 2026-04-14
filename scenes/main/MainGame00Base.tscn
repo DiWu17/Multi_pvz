@@ -1337,6 +1337,7 @@ text = "没做"
 
 [node name="LabelZombieSum" type="Label" parent="CanvasLayerUI" unique_id=1797598203]
 unique_name_in_owner = true
+visible = false
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0

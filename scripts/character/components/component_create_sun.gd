@@ -128,7 +128,7 @@ func _spawn_sun():
 			var sun_id = day_sun_mgr._next_sun_id()
 			new_sun.set_meta("sun_id", sun_id)
 			day_sun_mgr.active_suns[sun_id] = new_sun
-			NetworkManager.broadcast_plant_sun_spawn.rpc(sun_id, spawn_pos.x, spawn_pos.y, rand_x)
+			NetworkManager.broadcast_plant_sun_spawn.rpc(sun_id, spawn_pos.x, spawn_pos.y, rand_x, sun_value)
 
 
 ## 创建阳光全流程：身体发光、生产阳光、身体不发光

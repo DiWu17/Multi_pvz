@@ -170,10 +170,10 @@ func disconnect_from_server() -> void:
 
 #region 连接回调
 func _on_peer_connected(peer_id: int) -> void:
-	print("NetworkManager: 玩家连接 peer_id=%d" % peer_id)
+	GameLogger.log_net("玩家连接 peer_id=%d" % peer_id)
 
 func _on_peer_disconnected(peer_id: int) -> void:
-	print("NetworkManager: 玩家断开 peer_id=%d" % peer_id)
+	GameLogger.log_net("玩家断开 peer_id=%d" % peer_id)
 	players.erase(peer_id)
 	player_left.emit(peer_id)
 
@@ -186,7 +186,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 		_broadcast_player_list.rpc()
 
 func _on_connected_to_server() -> void:
-	print("NetworkManager: 已连接到服务器")
+	GameLogger.log_net("已连接到服务器")
 	lobby_state = LobbyState.IN_LOBBY
 	server_connected.emit()
 	# 向服务器注册自己
@@ -195,13 +195,13 @@ func _on_connected_to_server() -> void:
 	})
 
 func _on_connection_failed() -> void:
-	print("NetworkManager: 连接失败")
+	GameLogger.error("连接失败")
 	is_multiplayer = false
 	lobby_state = LobbyState.IDLE
 	connection_failed.emit()
 
 func _on_server_disconnected() -> void:
-	print("NetworkManager: 服务器断开")
+	GameLogger.error("服务器断开")
 	players.clear()
 	is_multiplayer = false
 	lobby_state = LobbyState.IDLE
@@ -459,6 +459,7 @@ func _execute_plant(plant_type: int, row: int, col: int, is_imitater: bool, owne
 	var plant = plant_cell.create_plant(plant_type as CharacterRegistry.PlantType, is_imitater)
 	if plant is Plant000Base:
 		plant.owner_peer_id = owner_id
+		GameLogger.log_net("_execute_plant: 种植 type=%d row=%d col=%d owner=%d" % [plant_type, row, col, owner_id])
 
 ## Host → Client: 种植被拒绝
 @rpc("authority", "reliable")
@@ -574,11 +575,11 @@ func broadcast_sun_collected(sun_id: int, new_sun_value: int) -> void:
 
 ## Host → 客户端: 植物产生阳光（向日葵等）
 @rpc("authority", "reliable")
-func broadcast_plant_sun_spawn(sun_id: int, pos_x: float, pos_y: float, rand_x: float) -> void:
+func broadcast_plant_sun_spawn(sun_id: int, pos_x: float, pos_y: float, rand_x: float, sun_val: int = 25) -> void:
 	var main_game = Global.main_game
 	if not is_instance_valid(main_game):
 		return
-	main_game.day_suns_manager.spawn_plant_sun_from_network(sun_id, Vector2(pos_x, pos_y), rand_x)
+	main_game.day_suns_manager.spawn_plant_sun_from_network(sun_id, Vector2(pos_x, pos_y), rand_x, sun_val)
 #endregion
 
 #region 僵尸同步
@@ -613,10 +614,36 @@ func broadcast_zombie_death(net_id: int) -> void:
 		return
 	var main_game = Global.main_game
 	if not is_instance_valid(main_game):
+		GameLogger.warn("broadcast_zombie_death: main_game 无效, net_id=%d" % net_id)
 		return
 	var zombie = main_game.zombie_manager.get_zombie_by_net_id(net_id)
-	if is_instance_valid(zombie) and not zombie.is_death:
-		zombie.hp_component.Hp_loss_death(false)
+	if not is_instance_valid(zombie):
+		GameLogger.warn("broadcast_zombie_death: 找不到僵尸或已释放, net_id=%d" % net_id)
+		return
+	if zombie.is_death:
+		GameLogger.log_net("broadcast_zombie_death: 僵尸已死亡,跳过, net_id=%d" % net_id)
+		return
+	## 恢复正常死亡阈值（客户端傀儡模式下 death_hp 被设为 -99999）
+	zombie.hp_component.set_death_hp(0)
+	zombie.hp_component.Hp_loss_death(false)
+	## 安全兜底：如果 sync_zombie_states 已将 HP 同步为 0，
+	## Hp_loss_death(0) 中所有 >0 分支均不进入，is_death 不会被设置。
+	## 此时直接触发死亡流程，确保死亡动画正常播放。
+	if not zombie.is_death:
+		print("[Net] broadcast_zombie_death 兜底触发 character_death, net_id=%d" % net_id)
+		zombie.character_death()
+
+## Host → 客户端: 僵尸被魅惑
+@rpc("authority", "reliable")
+func broadcast_zombie_hypno(net_id: int) -> void:
+	if multiplayer.is_server():
+		return
+	var main_game = Global.main_game
+	if not is_instance_valid(main_game):
+		return
+	var zombie = main_game.zombie_manager.get_zombie_by_net_id(net_id)
+	if is_instance_valid(zombie) and not zombie.is_death and not zombie.is_hypno:
+		zombie.be_hypno()
 
 ## Host → 客户端: 僵尸被黄油命中
 @rpc("authority", "reliable")
@@ -646,11 +673,27 @@ func broadcast_plant_death(row: int, col: int) -> void:
 
 ## Host → 所有人: 僵尸状态更新
 @rpc("authority", "unreliable")
-func sync_zombie_states(_zombie_data: Array) -> void:
-	# 客户端接收僵尸位置/动画同步
+func sync_zombie_states(zombie_data: Array) -> void:
 	if multiplayer.is_server():
 		return
-	pass
+	var main_game = Global.main_game
+	if not is_instance_valid(main_game):
+		return
+	var zm = main_game.zombie_manager
+	## zombie_data: Array of [net_id, pos_x, pos_y, hp, hp_a1, hp_a2, is_attack]
+	for entry in zombie_data:
+		var net_id: int = entry[0]
+		var zombie = zm.get_zombie_by_net_id(net_id)
+		if not is_instance_valid(zombie) or zombie.is_death:
+			continue
+		zombie.apply_network_state(
+			entry[1],  # pos_x
+			entry[2],  # pos_y
+			entry[3],  # hp
+			entry[4],  # hp_armor1
+			entry[5],  # hp_armor2
+			entry[6],  # is_attack
+		)
 #endregion
 
 #region 游戏状态同步

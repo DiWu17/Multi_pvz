@@ -23,6 +23,7 @@ script_list_meta = {
 "res://scripts/autoload/global/main_scene_registry.gd": [-1, -1],
 "res://scripts/autoload/global/save_service.gd": [-1, -1],
 "res://scripts/autoload/global/user_manager.gd": [-1, -1],
+"res://scripts/autoload/logger.gd": [-1, -1],
 "res://scripts/autoload/network_manager.gd": [-1, -1],
 "res://scripts/autoload/relay_multiplayer_peer.gd": [-1, -1],
 "res://scripts/autoload/scene_registry.gd": [-1, -1],
