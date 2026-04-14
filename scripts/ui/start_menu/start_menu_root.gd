@@ -94,7 +94,7 @@ func _on_button_update_user_pressed() -> void:
 
 ## 多人合作
 func _on_multiplayer_button_pressed() -> void:
-	if _lobby_instance != null:
+	if is_instance_valid(_lobby_instance):
 		return
 	_lobby_instance = LOBBY_SCENE.instantiate()
 	_lobby_instance.signal_lobby_closed.connect(_on_lobby_closed)

@@ -22,7 +22,7 @@ extends Control
 @onready var btn_relay_create: Button = $PanelMain/MarginContainer/VBoxContainer/TabContainer/服务器中转/VBoxContainer/BtnRelayCreate
 @onready var input_relay_room_code: LineEdit = $PanelMain/MarginContainer/VBoxContainer/TabContainer/服务器中转/VBoxContainer/InputRelayRoomCode
 @onready var btn_relay_join: Button = $PanelMain/MarginContainer/VBoxContainer/TabContainer/服务器中转/VBoxContainer/BtnRelayJoin
-
+@onready var btn_back: Button = $PanelMain/MarginContainer/VBoxContainer/HBoxTitle/BtnBack
 # 大厅 panel
 @onready var panel_lobby: PanelContainer = $PanelLobby
 @onready var player_list: VBoxContainer = $PanelLobby/MarginContainer/VBoxContainer/ScrollContainer/PlayerList
@@ -37,6 +37,7 @@ func _ready() -> void:
 	panel_lobby.visible = false
 	panel_main.visible = true
 
+	btn_back.pressed.connect(_on_btn_back_pressed)
 	btn_create.pressed.connect(_on_btn_create_pressed)
 	btn_join.pressed.connect(_on_btn_join_pressed)
 	btn_relay_create.pressed.connect(_on_btn_relay_create_pressed)
@@ -57,6 +58,10 @@ func _ready() -> void:
 
 	input_port.value = NetworkManager.DEFAULT_PORT
 	input_join_port.value = NetworkManager.DEFAULT_PORT
+
+## 返回主菜单
+func _on_btn_back_pressed() -> void:
+	queue_free()
 
 ## 创建房间
 func _on_btn_create_pressed() -> void:
