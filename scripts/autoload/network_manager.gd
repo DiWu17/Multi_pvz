@@ -391,6 +391,16 @@ func get_start_sun_multiplier() -> float:
 		return 1.0
 	return player_count * 0.75
 
+## 获取多人模式下的卡槽数量上限
+## 1人=10, 2人=5, 3人=4, 4人=3
+func get_max_card_slots() -> int:
+	match player_count:
+		1: return 10
+		2: return 5
+		3: return 4
+		4: return 3
+		_: return maxi(2, 10 / player_count)
+
 ## 重新计算难度（玩家断线时）
 func _recalculate_difficulty() -> void:
 	if not multiplayer.is_server():

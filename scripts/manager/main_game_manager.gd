@@ -182,7 +182,10 @@ func _apply_multiplayer_scaling() -> void:
 	game_para.zombie_multy *= zombie_scale
 	# 起始阳光
 	game_para.start_sun = int(game_para.start_sun * start_sun_mult)
-	print("多人模式难度缩放: 僵尸倍率=%.2f, 起始阳光=%d, 玩家数=%d" % [zombie_scale, game_para.start_sun, multiplayer_player_count])
+	# 卡槽数量随人数减少
+	var max_slots = NetworkManager.get_max_card_slots()
+	game_para.max_choosed_card_num = mini(game_para.max_choosed_card_num, max_slots)
+	print("多人模式难度缩放: 僵尸倍率=%.2f, 起始阳光=%d, 卡槽=%d, 玩家数=%d" % [zombie_scale, game_para.start_sun, game_para.max_choosed_card_num, multiplayer_player_count])
 
 func _ready() -> void:
 	game_para.init_para()
