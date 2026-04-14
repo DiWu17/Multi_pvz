@@ -3,3 +3,7 @@
 /android/
 .vscode
 assets
+
+# Large binary files
+*.pck
+*.exe
