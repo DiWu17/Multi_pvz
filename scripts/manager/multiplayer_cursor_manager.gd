@@ -26,6 +26,9 @@ var _peer_highlighted_cells: Dictionary = {}
 ## 每个 peer 当前显示的植物类型 {peer_id: int}
 var _peer_held_plant_type: Dictionary = {}
 
+## 每个 peer 当前的格子植物虚影 {peer_id: {node, plant_type, row, col}}
+var _peer_cell_ghosts: Dictionary = {}
+
 ## 光标插值用 Tween {peer_id: Tween}
 var _peer_tweens: Dictionary = {}
 
@@ -47,11 +50,10 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if EventBus.has_signal("remote_cursor_update"):
 		EventBus.unsubscribe("remote_cursor_update", _on_remote_cursor_update)
-	# 清除所有格子高亮
-	for pid in _peer_highlighted_cells.keys():
-		var old = _peer_highlighted_cells[pid]
-		_set_cell_highlight(old.x, old.y, pid, false)
+	# 清除所有虚影
 	_peer_highlighted_cells.clear()
+	for pid in _peer_cell_ghosts.keys():
+		_hide_cell_ghost(pid)
 
 #region 本地光标状态发送
 ## 定时发送本地光标状态
@@ -128,10 +130,10 @@ func _on_remote_cursor_update(peer_id: int, state: Dictionary) -> void:
 	var label: Label = cursor_node.get_node("NameLabel")
 	label.text = NetworkManager.get_player_name(peer_id)
 
-	# 4. 更新悬停格子高亮
+	# 4. 更新悬停格子高亮 / 植物虚影
 	var hovered_row: int = state.get("hovered_row", -1)
 	var hovered_col: int = state.get("hovered_col", -1)
-	_update_cell_highlight(peer_id, hovered_row, hovered_col)
+	_update_cell_highlight(peer_id, hovered_row, hovered_col, held_type, held_plant_type)
 #endregion
 
 #region 光标节点创建
@@ -232,25 +234,37 @@ func _clear_plant_preview(container: Node2D, peer_id: int) -> void:
 		child.queue_free()
 #endregion
 
-#region 格子高亮
-## 更新悬停格子高亮
-func _update_cell_highlight(peer_id: int, row: int, col: int) -> void:
-	# 清除旧高亮
+#region 植物虚影
+## 更新悬停格子植物虚影
+func _update_cell_highlight(peer_id: int, row: int, col: int, held_type: String, held_plant_type: int) -> void:
+	# 格子变化时清除旧虚影
 	if _peer_highlighted_cells.has(peer_id):
 		var old = _peer_highlighted_cells[peer_id]
 		if old.x != row or old.y != col:
-			_set_cell_highlight(old.x, old.y, peer_id, false)
+			_hide_cell_ghost(peer_id)
 			_peer_highlighted_cells.erase(peer_id)
-		elif old.x == row and old.y == col:
-			return  # 同一格子，无需更新
 
-	# 设置新高亮
-	if row >= 0 and col >= 0:
-		_set_cell_highlight(row, col, peer_id, true)
-		_peer_highlighted_cells[peer_id] = Vector2i(row, col)
+	# 无有效悬停格子
+	if row < 0 or col < 0:
+		_hide_cell_ghost(peer_id)
+		return
 
-## 设置指定格子的远端高亮
-func _set_cell_highlight(row: int, col: int, peer_id: int, show: bool) -> void:
+	# 持有植物 → 显示植物虚影
+	if held_type == "plant" and held_plant_type > 0:
+		_show_cell_ghost(peer_id, row, col, held_plant_type)
+	else:
+		_hide_cell_ghost(peer_id)
+
+	_peer_highlighted_cells[peer_id] = Vector2i(row, col)
+## 显示远端玩家的植物虚影（和本机种植预览一样的半透明植物）
+func _show_cell_ghost(peer_id: int, row: int, col: int, plant_type: int) -> void:
+	# 如果已有相同的虚影，跳过
+	if _peer_cell_ghosts.has(peer_id):
+		var info = _peer_cell_ghosts[peer_id]
+		if info["plant_type"] == plant_type and info["row"] == row and info["col"] == col:
+			return
+		_hide_cell_ghost(peer_id)
+
 	var main_game = Global.main_game
 	if not is_instance_valid(main_game):
 		return
@@ -258,10 +272,44 @@ func _set_cell_highlight(row: int, col: int, peer_id: int, show: bool) -> void:
 	if row < 0 or col < 0 or row >= pcm.row_col.x or col >= pcm.row_col.y:
 		return
 	var cell: PlantCell = pcm.all_plant_cells[row][col]
-	if show:
-		cell.show_remote_highlight(peer_id, NetworkManager.get_player_color(peer_id))
+
+	# 获取植物卡片
+	var card: Card = AllCards.all_plant_card_prefabs.get(plant_type as CharacterRegistry.PlantType)
+	if not card or not is_instance_valid(card) or not is_instance_valid(card.character_static):
+		return
+
+	# 创建虚影 —— 和本机一样：取 character_static 子节点的副本
+	var source = card.character_static.duplicate()
+	var ghost: Node2D
+	if source.get_child_count() > 0:
+		source.get_child(0).scale = Vector2.ONE
+		ghost = source.get_child(0).duplicate()
+		source.free()
 	else:
-		cell.hide_remote_highlight(peer_id)
+		ghost = source
+	ghost.modulate.a = 0.5
+
+	# 获取植物放置位置
+	var plant_condition = Global.character_registry.get_plant_info(
+		plant_type as CharacterRegistry.PlantType,
+		CharacterRegistry.PlantInfoAttribute.PlantConditionResource
+	)
+	var place_pos := CharacterRegistry.PlacePlantInCell.Norm
+	if plant_condition:
+		place_pos = plant_condition.place_plant_in_cell
+
+	add_child(ghost)
+	ghost.global_position = cell.get_new_plant_static_shadow_global_position(place_pos)
+
+	_peer_cell_ghosts[peer_id] = {"node": ghost, "plant_type": plant_type, "row": row, "col": col}
+
+## 隐藏远端玩家的植物虚影
+func _hide_cell_ghost(peer_id: int) -> void:
+	if _peer_cell_ghosts.has(peer_id):
+		var info = _peer_cell_ghosts[peer_id]
+		if is_instance_valid(info["node"]):
+			info["node"].queue_free()
+		_peer_cell_ghosts.erase(peer_id)
 #endregion
 
 #region 玩家离开
@@ -273,9 +321,7 @@ func _on_player_left(peer_id: int) -> void:
 	if _peer_tweens.has(peer_id):
 		_peer_tweens.erase(peer_id)
 	_peer_held_plant_type.erase(peer_id)
-	# 移除该玩家的格子高亮
-	if _peer_highlighted_cells.has(peer_id):
-		var old = _peer_highlighted_cells[peer_id]
-		_set_cell_highlight(old.x, old.y, peer_id, false)
-		_peer_highlighted_cells.erase(peer_id)
+	# 移除该玩家的虚影
+	_hide_cell_ghost(peer_id)
+	_peer_highlighted_cells.erase(peer_id)
 #endregion
