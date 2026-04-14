@@ -37,7 +37,7 @@ const NET_PROBE_TIMEOUT_MS := 2500
 ## 玩家颜色 P1红 P2蓝 P3绿 P4黄
 const PLAYER_COLORS := [
 	Color(1.0, 0.3, 0.3),  # 红
-	Color(0.3, 0.5, 1.0),  # 蓝
+	Color(0.1, 0.7, 1.0),  # 蓝（更亮更显眼）
 	Color(0.3, 1.0, 0.4),  # 绿
 	Color(1.0, 0.9, 0.3),  # 黄
 ]
@@ -885,9 +885,50 @@ func get_player_name(peer_id: int) -> String:
 #endregion
 
 #region 光标同步
+
+#region 墓碑同步
+## Host → 客户端: 广播墓碑生成位置
+@rpc("authority", "reliable")
+func broadcast_tombstone_positions(pos_array: Array[int]) -> void:
+	if multiplayer.is_server():
+		return
+	var main_game = Global.main_game
+	if not is_instance_valid(main_game):
+		return
+	var positions: Array[Vector2i] = []
+	for i in range(0, pos_array.size(), 2):
+		positions.append(Vector2i(pos_array[i], pos_array[i + 1]))
+	main_game.plant_cell_manager.tomb_stone_manager.create_tombstone_from_network(positions)
+#endregion
+
+#region 光标同步
 ## 任意玩家 → 所有人: 广播光标状态
 @rpc("any_peer", "unreliable")
 func sync_cursor_state(peer_id: int, state: Dictionary) -> void:
 	# 由 MultiplayerCursorManager 处理
 	EventBus.push_event("remote_cursor_update", [peer_id, state])
+
+## 本地调用入口：发送标点
+func local_send_ping_marker(world_pos: Vector2) -> void:
+	if not is_multiplayer:
+		return
+	if is_server():
+		broadcast_ping_marker.rpc(multiplayer.get_unique_id(), world_pos.x, world_pos.y)
+	else:
+		request_ping_marker.rpc_id(1, world_pos.x, world_pos.y)
+
+## 客户端 → Host: 请求发送标点
+@rpc("any_peer", "unreliable")
+func request_ping_marker(pos_x: float, pos_y: float) -> void:
+	if not multiplayer.is_server():
+		return
+	var sender_id := multiplayer.get_remote_sender_id()
+	if sender_id <= 0:
+		return
+	broadcast_ping_marker.rpc(sender_id, pos_x, pos_y)
+
+## Host → 所有人: 广播标点
+@rpc("authority", "call_local", "unreliable")
+func broadcast_ping_marker(peer_id: int, pos_x: float, pos_y: float) -> void:
+	EventBus.push_event("remote_ping_marker", [peer_id, Vector2(pos_x, pos_y)])
 #endregion

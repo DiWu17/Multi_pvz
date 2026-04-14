@@ -14,6 +14,7 @@ var sync_timer: Timer
 ## 光标同步频率 (10Hz)
 const SYNC_INTERVAL := 0.1
 const NET_HUD_UPDATE_INTERVAL := 0.5
+const PING_KEEP_TIME := 0.5
 
 ## 铲子纹理
 const SHOVEL_TEXTURE := preload("res://assets/image/ui/ui_card/Shovel.png")
@@ -33,6 +34,9 @@ var _peer_cell_ghosts: Dictionary = {}
 ## 光标插值用 Tween {peer_id: Tween}
 var _peer_tweens: Dictionary = {}
 
+## 每个 peer 当前标点节点 {peer_id: Node2D}
+var _peer_ping_nodes: Dictionary = {}
+
 ## 网络状态 HUD
 var _net_hud_layer: CanvasLayer = null
 var _net_status_label: Label = null
@@ -45,6 +49,7 @@ func _ready() -> void:
 
 	# 订阅远端光标更新事件
 	EventBus.subscribe("remote_cursor_update", _on_remote_cursor_update)
+	EventBus.subscribe("remote_ping_marker", _on_remote_ping_marker)
 	NetworkManager.player_left.connect(_on_player_left)
 
 	# 创建本地光标同步计时器
@@ -62,6 +67,8 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if EventBus.has_signal("remote_cursor_update"):
 		EventBus.unsubscribe("remote_cursor_update", _on_remote_cursor_update)
+	if EventBus.has_signal("remote_ping_marker"):
+		EventBus.unsubscribe("remote_ping_marker", _on_remote_ping_marker)
 	if NetworkManager.net_stats_updated.is_connected(_on_net_stats_updated):
 		NetworkManager.net_stats_updated.disconnect(_on_net_stats_updated)
 	if NetworkManager.server_disconnected.is_connected(_on_disconnected):
@@ -72,6 +79,10 @@ func _exit_tree() -> void:
 	_peer_highlighted_cells.clear()
 	for pid in _peer_cell_ghosts.keys():
 		_hide_cell_ghost(pid)
+	for pid in _peer_ping_nodes.keys():
+		if is_instance_valid(_peer_ping_nodes[pid]):
+			_peer_ping_nodes[pid].queue_free()
+	_peer_ping_nodes.clear()
 
 func _create_network_hud() -> void:
 	_net_hud_layer = CanvasLayer.new()
@@ -209,6 +220,52 @@ func _on_remote_cursor_update(peer_id: int, state: Dictionary) -> void:
 	var hovered_row: int = state.get("hovered_row", -1)
 	var hovered_col: int = state.get("hovered_col", -1)
 	_update_cell_highlight(peer_id, hovered_row, hovered_col, held_type, held_plant_type)
+#endregion
+
+#region 标点显示
+func _on_remote_ping_marker(peer_id: int, world_pos: Vector2) -> void:
+	if peer_id <= 0:
+		return
+
+	if _peer_ping_nodes.has(peer_id) and is_instance_valid(_peer_ping_nodes[peer_id]):
+		_peer_ping_nodes[peer_id].queue_free()
+
+	var marker_root = Node2D.new()
+	marker_root.name = "PingMarker_%d" % peer_id
+	marker_root.global_position = world_pos
+	marker_root.z_index = 180
+	marker_root.modulate = Color(1, 1, 1, 0)
+	add_child(marker_root)
+
+	var color = NetworkManager.get_player_color(peer_id)
+
+	var marker = Label.new()
+	marker.text = "!"
+	marker.position = Vector2(-6, -30)
+	marker.add_theme_font_size_override("font_size", 36)
+	marker.add_theme_color_override("font_color", color)
+	marker_root.add_child(marker)
+
+	var name_label = Label.new()
+	name_label.text = NetworkManager.get_player_name(peer_id)
+	name_label.position = Vector2(-40, -46)
+	name_label.add_theme_font_size_override("font_size", 12)
+	name_label.add_theme_color_override("font_color", color)
+	marker_root.add_child(name_label)
+
+	_peer_ping_nodes[peer_id] = marker_root
+
+	var tween = create_tween()
+	tween.tween_property(marker_root, "modulate:a", 1.0, 0.08)
+	tween.parallel().tween_property(marker_root, "scale", Vector2(1.15, 1.15), 0.12).from(Vector2(0.35, 0.35))
+	tween.tween_interval(PING_KEEP_TIME)
+	tween.tween_property(marker_root, "modulate:a", 0.0, 0.22)
+	tween.finished.connect(func():
+		if is_instance_valid(marker_root):
+			marker_root.queue_free()
+		if _peer_ping_nodes.get(peer_id, null) == marker_root:
+			_peer_ping_nodes.erase(peer_id)
+	)
 #endregion
 
 #region 光标节点创建
@@ -399,4 +456,8 @@ func _on_player_left(peer_id: int) -> void:
 	# 移除该玩家的虚影
 	_hide_cell_ghost(peer_id)
 	_peer_highlighted_cells.erase(peer_id)
+	if _peer_ping_nodes.has(peer_id):
+		if is_instance_valid(_peer_ping_nodes[peer_id]):
+			_peer_ping_nodes[peer_id].queue_free()
+		_peer_ping_nodes.erase(peer_id)
 #endregion

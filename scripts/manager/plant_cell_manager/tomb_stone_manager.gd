@@ -27,15 +27,17 @@ func init_tomb_stone_manager(_game_para:ResourceLevelData):
 		all_is_tombstone.append(is_tombstone_row)
 
 #region 墓碑相关
-## 生成待选位置,没有墓碑的行和列
+## 生成待选位置,没有墓碑且没有植物的行和列
 func _candidates_position(rows:int, cols_start:int, cols_end:int=plant_cell_manager.row_col.y) -> Array[Vector2i]:
 	# 构建可选位置列表
 	var candidates: Array[Vector2i]= []
 	for r in range(rows):
 		for c in range(cols_start, cols_end):
-			## 如果没有墓碑
+			## 如果没有墓碑且没有植物
 			if not all_is_tombstone[r][c]:
-				candidates.append(Vector2i(r, c))
+				var plant_cell:PlantCell = plant_cell_manager.all_plant_cells[r][c]
+				if not plant_cell.has_plant():
+					candidates.append(Vector2i(r, c))
 
 	# 打乱顺序确保随机性
 	candidates.shuffle()
@@ -100,15 +102,35 @@ func _delete_tombstone(plant_cell:PlantCell, _tombstone:TombStone):
 ## 黑夜关卡生成墓碑（生成数量）
 func create_tombstone(new_num:int):
 	await get_tree().process_frame
+
+	## 多人模式下：只有 Host 生成随机位置并广播，客户端忽略本地调用
+	if NetworkManager.is_multiplayer and not NetworkManager.is_server():
+		return
+
 	## 最大数量： 最大可生成列数 * 行数
 	## 生成随机位置
 	print("墓碑生成数量", new_num)
 	var selected_positions :Array[Vector2i]= _reandom_tombstone_pos(new_num)
 
 	print("墓碑生成位置", selected_positions)
+
+	## 多人模式下广播位置给客户端
+	if NetworkManager.is_multiplayer:
+		var pos_array: Array[int] = []
+		for pos in selected_positions:
+			pos_array.append(pos.x)
+			pos_array.append(pos.y)
+		NetworkManager.broadcast_tombstone_positions.rpc(pos_array)
+
 	for pos in selected_positions:
 		var plant_cell:PlantCell = plant_cell_manager.all_plant_cells[pos.x][pos.y]
+		_create_one_tombstone(plant_cell, pos)
 
+
+## 客户端收到 Host 广播的位置后，在本地创建墓碑
+func create_tombstone_from_network(positions: Array[Vector2i]):
+	for pos in positions:
+		var plant_cell:PlantCell = plant_cell_manager.all_plant_cells[pos.x][pos.y]
 		_create_one_tombstone(plant_cell, pos)
 
 

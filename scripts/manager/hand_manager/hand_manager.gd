@@ -102,6 +102,10 @@ func _on_cell_mouse_exit(plant_cell:PlantCell):
 
 ## 取消角色和道具
 func _input(event):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_MIDDLE and event.pressed:
+		_emit_ping_marker()
+		return
+
 	## 当前手持状态不为空且鼠标点击事件
 	if curr_hm_status != E_HandManagerStatus.Null and event is InputEventMouseButton:
 		## 右键点击 或左鍵点击空白
@@ -109,3 +113,14 @@ func _input(event):
 		event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not curr_plant_cell:
 			SoundManager.play_other_SFX("tap2")
 			curr_hm_status = E_HandManagerStatus.Null
+
+func _emit_ping_marker() -> void:
+	if not NetworkManager.is_multiplayer:
+		return
+	var main_game = Global.main_game
+	if not is_instance_valid(main_game):
+		return
+	if main_game.main_game_progress != MainGameManager.E_MainGameProgress.MAIN_GAME:
+		return
+	NetworkManager.local_send_ping_marker(main_game.get_global_mouse_position())
+	SoundManager.play_other_SFX("tap2")
