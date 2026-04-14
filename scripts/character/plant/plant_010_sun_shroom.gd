@@ -35,6 +35,7 @@ func ready_norm_signal_connect():
 func _on_grow_timer_timeout() -> void:
 	self.is_grow = true
 	create_sun_component.change_sun_value(norm_sun_value)
+	SoundManager.play_character_SFX(&"PlantGrow")
 
 ## 更新成长的速度
 func update_grow_speed(speed_factor:float):

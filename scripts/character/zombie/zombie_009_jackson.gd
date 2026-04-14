@@ -168,4 +168,7 @@ func anim_play(anim_name, curr_scale, start_time, speed):
 ### 使用舞王管理器召唤伴舞僵尸
 func call_zombie_dancer():
 	if not is_death:
+		## 多人模式下仅 Host 召唤伴舞，客户端通过 broadcast_zombie_spawn RPC 接收
+		if NetworkManager.is_multiplayer and not NetworkManager.is_server():
+			return
 		jackson_manager.call_zombie_dancer()

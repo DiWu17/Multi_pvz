@@ -29,6 +29,8 @@ var is_imitater_material:=false
 var owner_peer_id: int = 1
 ## 紫卡升级时被替换死亡，不广播 plant_death RPC（客户端已在 create_plant 中自行处理）
 var is_upgrade_replaced: bool = false
+## 动画驱动死亡的植物（如墓碑吞噬者),两端独立播放动画，不广播 plant_death
+var skip_death_broadcast: bool = false
 #endregion
 
 #region 植物动画
@@ -185,7 +187,8 @@ func character_death():
 	## 发射死亡信号
 	super()
 	## 多人模式：Host 广播植物死亡（紫卡升级替换的死亡不广播，客户端已在 _execute_plant → create_plant 中处理）
-	if NetworkManager.is_multiplayer and NetworkManager.is_server() and row_col.x >= 0 and not is_upgrade_replaced:
+	## 墓碑吞噬者等动画驱动死亡的植物跳过广播（skip_death_broadcast），两端独立播放动画
+	if NetworkManager.is_multiplayer and NetworkManager.is_server() and row_col.x >= 0 and not is_upgrade_replaced and not skip_death_broadcast:
 		NetworkManager.broadcast_plant_death.rpc(row_col.x, row_col.y)
 	if is_instance_valid(hurt_box_component):
 		## 要先删除碰撞器，否则僵尸攻击检测组件有问题

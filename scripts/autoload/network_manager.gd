@@ -899,6 +899,18 @@ func broadcast_tombstone_positions(pos_array: Array[int]) -> void:
 	for i in range(0, pos_array.size(), 2):
 		positions.append(Vector2i(pos_array[i], pos_array[i + 1]))
 	main_game.plant_cell_manager.tomb_stone_manager.create_tombstone_from_network(positions)
+
+## Host → 客户端: 广播墓碑被吃掉（墓碑吞噬者）
+@rpc("authority", "reliable")
+func broadcast_tombstone_death(row: int, col: int) -> void:
+	if multiplayer.is_server():
+		return
+	var main_game = Global.main_game
+	if not is_instance_valid(main_game):
+		return
+	var plant_cell: PlantCell = main_game.plant_cell_manager.all_plant_cells[row][col]
+	if is_instance_valid(plant_cell.tombstone):
+		plant_cell.tombstone.tombstone_death()
 #endregion
 
 #region 光标同步

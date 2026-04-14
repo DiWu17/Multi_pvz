@@ -7,6 +7,7 @@ var is_end_eat_grave := false
 
 func ready_norm():
 	super()
+	skip_death_broadcast = true
 	_start_eat_grave()
 
 ## 植物死亡
@@ -44,5 +45,7 @@ func _end_eat_grave():
 	if not is_instance_valid(plant_cell.tombstone):
 		print("当前植物格子", plant_cell.row_col, "没有墓碑")
 		return
+	## 多人模式：Host 广播墓碑被吃掉
+	if NetworkManager.is_multiplayer and NetworkManager.is_server():
+		NetworkManager.broadcast_tombstone_death.rpc(row_col.x, row_col.y)
 	plant_cell.tombstone.tombstone_death()
-
