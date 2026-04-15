@@ -475,7 +475,17 @@ func _set_card_chosen(peer_id: int) -> void:
 		return
 	if players.has(peer_id):
 		players[peer_id]["is_card_chosen"] = true
+		_broadcast_card_chosen_status.rpc(_build_vote_status("is_card_chosen"))
 		_check_all_cards_chosen()
+
+## 信号：选卡投票进度更新 (vote_status: Array[Dictionary])
+## 每个元素: {"color_index": int, "voted": bool}
+signal card_chosen_vote_updated(vote_status: Array)
+
+## Host → 所有人: 广播选卡投票状态
+@rpc("authority", "call_local", "reliable")
+func _broadcast_card_chosen_status(vote_status: Array) -> void:
+	card_chosen_vote_updated.emit(vote_status)
 
 ## 检查是否全员选卡完成
 func _check_all_cards_chosen() -> void:
@@ -516,7 +526,28 @@ func _set_restart_vote(peer_id: int) -> void:
 
 	if players.has(peer_id):
 		players[peer_id]["is_restart_voted"] = true
+		_broadcast_restart_vote_status.rpc(_build_vote_status("is_restart_voted"))
 		_check_all_restart_votes()
+
+## 信号：重新开始投票进度更新 (vote_status: Array[Dictionary])
+## 每个元素: {"color_index": int, "voted": bool}
+signal restart_vote_updated(vote_status: Array)
+
+## Host → 所有人: 广播重新开始投票状态
+@rpc("authority", "call_local", "reliable")
+func _broadcast_restart_vote_status(vote_status: Array) -> void:
+	restart_vote_updated.emit(vote_status)
+
+## 构建投票状态数组，按 color_index 排序
+func _build_vote_status(vote_key: String) -> Array:
+	var result: Array = []
+	for pid in players:
+		result.append({
+			"color_index": players[pid].get("color_index", 0),
+			"voted": players[pid].get(vote_key, false),
+		})
+	result.sort_custom(func(a, b): return a["color_index"] < b["color_index"])
+	return result
 
 ## 检查是否全员投票重新开始
 func _check_all_restart_votes() -> void:

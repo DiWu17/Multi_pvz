@@ -333,7 +333,6 @@ script_list_meta = {
 "res://scripts/ui/dialog.gd": [-1, -1],
 "res://scripts/ui/dialog_confirm.gd": [-1, -1],
 "res://scripts/ui/dialog_error.gd": [-1, -1],
-"res://scripts/ui/main_game_ui/game_over_restart_panel.gd": [-1, -1],
 "res://scripts/ui/main_game_ui/label_zombie_sum.gd": [-1, -1],
 "res://scripts/ui/main_game_ui/main_game_menu_button.gd": [-1, -1],
 "res://scripts/ui/main_game_ui/sun.gd": [-1, -1],

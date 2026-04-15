@@ -8,6 +8,12 @@ class_name CardSlotNorm
 @onready var card_slot_candidate: CardSlotCandidate = $CardSlotCandidate
 ## 出战卡槽节点
 @onready var card_slot_battle: CardSlotBattle = $CardSlotBattle
+## 开始游戏按钮
+@onready var start_button: TextureButton = $CardSlotCandidate/TextureButton
+## 投票指示圆点容器（多人模式动态创建）
+var _vote_dots_container: HBoxContainer = null
+## 投票圆点数组
+var _vote_dots: Array[ColorRect] = []
 
 
 ## 初始化出战卡槽，管理器调用
@@ -23,6 +29,10 @@ func init_card_slot_norm(game_para:ResourceLevelData):
 	for i in card_slot_candidate.all_card_candidate_containers_plant_imitater:
 		var card:Card = card_slot_candidate.all_card_candidate_containers_plant_imitater[i].card
 		card.signal_card_click.connect(_on_imitater_card_click.bind(card))
+
+	## 多人模式：监听选卡投票进度
+	if NetworkManager.is_multiplayer:
+		NetworkManager.card_chosen_vote_updated.connect(_on_card_chosen_vote_updated)
 
 	## 初始化预选卡
 	if game_para.pre_choosed_card_list_plant or game_para.pre_choosed_card_list_zombie:
@@ -223,4 +233,54 @@ func move_card_slot_battle(is_appeal:bool, appeal_time:= 0.2):
 	else:
 		tween.tween_property(card_slot_battle, "position",Vector2(0, -100.0), appeal_time)
 	await tween.finished
+
+#region 多人模式投票进度UI
+const VOTE_DOT_SIZE := 8
+const VOTE_DOT_GAP := 3
+const VOTE_DOT_UNVOTED_ALPHA := 0.3
+
+## 创建投票圆点容器（在按钮右上角）
+func _ensure_vote_dots(count: int, vote_status: Array) -> void:
+	if _vote_dots_container == null:
+		_vote_dots_container = HBoxContainer.new()
+		_vote_dots_container.add_theme_constant_override("separation", VOTE_DOT_GAP)
+		start_button.add_child(_vote_dots_container)
+	# 重建圆点（玩家数可能变化）
+	if _vote_dots.size() != count:
+		for dot in _vote_dots:
+			dot.queue_free()
+		_vote_dots.clear()
+		for i in count:
+			var dot := ColorRect.new()
+			dot.custom_minimum_size = Vector2(VOTE_DOT_SIZE, VOTE_DOT_SIZE)
+			dot.size = Vector2(VOTE_DOT_SIZE, VOTE_DOT_SIZE)
+			_vote_dots_container.add_child(dot)
+			_vote_dots.append(dot)
+	# 定位到按钮右上角
+	var total_w = count * VOTE_DOT_SIZE + (count - 1) * VOTE_DOT_GAP
+	_vote_dots_container.position = Vector2(start_button.size.x - total_w - 4, 4)
+	_vote_dots_container.visible = true
+
+## 更新圆点颜色
+func _update_vote_dots(vote_status: Array) -> void:
+	_ensure_vote_dots(vote_status.size(), vote_status)
+	for i in vote_status.size():
+		var info: Dictionary = vote_status[i]
+		var color_index: int = info.get("color_index", 0)
+		var voted: bool = info.get("voted", false)
+		var base_color: Color = NetworkManager.PLAYER_COLORS[color_index]
+		if voted:
+			_vote_dots[i].color = base_color
+		else:
+			_vote_dots[i].color = Color(base_color, VOTE_DOT_UNVOTED_ALPHA)
+
+## 选卡投票进度更新回调
+func _on_card_chosen_vote_updated(vote_status: Array) -> void:
+	_update_vote_dots(vote_status)
+
+## 隐藏投票圆点
+func _hide_vote_dots() -> void:
+	if _vote_dots_container != null:
+		_vote_dots_container.visible = false
+#endregion
 

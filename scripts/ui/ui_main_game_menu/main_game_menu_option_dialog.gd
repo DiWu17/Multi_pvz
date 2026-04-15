@@ -10,6 +10,10 @@ class_name MainGameMenuOptionDialog
 @onready var canvas_layer_console: CanvasLayerConsole = %CanvasLayerConsole
 ## 图鉴场景所在的画布层
 @onready var canvas_layer_almanac: CanvasLayer = %CanvasLayerAlmanac
+## 重新开始按钮的Label
+@onready var restart_label: Label = $Option/Button2/Label
+
+var _restart_label_default_text: String = ""
 
 
 func _ready() -> void:
@@ -24,6 +28,11 @@ func _ready() -> void:
 	if NetworkManager.is_multiplayer:
 		time_scale_h_slider.editable = false
 		time_sacle_label.text = "倍速 1 倍（联机中）"
+	## 保存重新开始按钮默认文本
+	_restart_label_default_text = restart_label.text
+	## 监听重新开始投票进度
+	if NetworkManager.is_multiplayer:
+		NetworkManager.restart_vote_updated.connect(_on_restart_vote_updated)
 
 
 func music_sound_signal(h_slider: HSlider, bus_index):
@@ -43,6 +52,7 @@ func time_sacle_signal(h_slider: HSlider):
 
 ## 出现菜单
 func appear_menu():
+	_reset_restart_label()
 	await get_tree().create_timer(0.1).timeout
 	## 多人模式：不暂停游戏
 	if not NetworkManager.is_multiplayer:
@@ -72,10 +82,6 @@ func resume_game():
 	## 多人模式：发起投票
 	if NetworkManager.is_multiplayer:
 		NetworkManager.notify_restart_vote()
-		# 关闭菜单，等待投票结果
-		visible = false
-		if not NetworkManager.is_multiplayer:
-			TreePauseManager.end_tree_pause(TreePauseManager.E_PauseFactor.Menu)
 	else:
 		## 单人模式：直接重新开始
 		EventBus.push_event("change_is_mouse_visibel_on_hammer", true)
@@ -101,4 +107,17 @@ func _unrealized():
 ## 出现控制台
 func _on_button_console_pressed() -> void:
 	canvas_layer_console.appear_canvas_layer_control()
+
+## 重新开始投票进度更新
+func _on_restart_vote_updated(vote_status: Array) -> void:
+	var voted := 0
+	for info in vote_status:
+		if info.get("voted", false):
+			voted += 1
+	restart_label.text = _restart_label_default_text + " (%d/%d)" % [voted, vote_status.size()]
+
+## 菜单打开时重置按钮文本
+func _reset_restart_label() -> void:
+	if _restart_label_default_text != "":
+		restart_label.text = _restart_label_default_text
 
