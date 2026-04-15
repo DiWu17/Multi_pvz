@@ -99,19 +99,19 @@ func start_next_wave() -> void:
 		## 最后一波
 		if curr_wave == max_wave - 1:
 			curr_wave_type = E_WaveType.Final
-			sync_show_wave_reminder.rpc(true)
+			_show_wave_reminder(true)
 			await get_tree().create_timer(6.0).timeout
 			curr_wave_all_zombies = zombie_wave_create_manager.create_curr_wave_all_zombies(curr_wave, true)
-			sync_set_progress_bar.rpc(int(curr_wave%max_wave_one_round/10.0))
+			_set_progress_bar_with_sync(int(curr_wave%max_wave_one_round/10.0))
 			## 额外生成大波特殊僵尸,珊瑚僵尸,蹦极僵尸
 			zombie_wave_create_manager.spawn_special_zombie_in_big_wave(true)
 
 		else:
 			curr_wave_type = E_WaveType.Flag
-			sync_show_wave_reminder.rpc(false)
+			_show_wave_reminder(false)
 			await get_tree().create_timer(6.0).timeout
 			curr_wave_all_zombies = zombie_wave_create_manager.create_curr_wave_all_zombies(curr_wave, true)
-			sync_set_progress_bar.rpc(int(curr_wave%max_wave_one_round/10.0))
+			_set_progress_bar_with_sync(int(curr_wave%max_wave_one_round/10.0))
 			## 额外生成大波特殊僵尸,珊瑚僵尸,蹦极僵尸
 			zombie_wave_create_manager.spawn_special_zombie_in_big_wave(false)
 
@@ -123,7 +123,7 @@ func start_next_wave() -> void:
 	else:
 		curr_wave_type = E_WaveType.Norm
 		curr_wave_all_zombies = zombie_wave_create_manager.create_curr_wave_all_zombies(curr_wave, false)
-		sync_set_progress_bar.rpc(0)
+		_set_progress_bar_with_sync(0)
 
 	var wave_all_hp := 0
 	for zombie:Zombie000Base in curr_wave_all_zombies:
@@ -150,12 +150,28 @@ func update_progress_bar_segment_mini_every_sec(time:float):
 		if curr_wave == max_wave - 1:
 			time = 0
 
+	if time <= 0.0:
+		progress_bar_segment_mini_every_sec = 0.0
+		return
+
 	progress_bar_segment_mini_every_sec = progress_bar_segment_every_wave / time
 
 ## 随时间每秒更新进度条
 func _on_every_wave_progress_timer_timeout() -> void:
 	# 每秒进度条增加对应的进度值
 	flag_progress_bar.set_progress_add_every_sec(progress_bar_segment_mini_every_sec)
+
+func _show_wave_reminder(final: bool) -> void:
+	if NetworkManager.is_multiplayer:
+		sync_show_wave_reminder.rpc(final)
+	else:
+		sync_show_wave_reminder(final)
+
+func _set_progress_bar_with_sync(flag_i: int = -1) -> void:
+	if NetworkManager.is_multiplayer:
+		sync_set_progress_bar.rpc(flag_i)
+	else:
+		sync_set_progress_bar(flag_i)
 
 #region RPC 网络同步方法
 ## RPC: 同步显示波次提示 (异步)

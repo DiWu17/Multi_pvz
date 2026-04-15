@@ -24,6 +24,9 @@ func _ready() -> void:
 
 
 func _on_area_entered(area: Area2D) -> void:
+	## 联机模式下只有 Host 处理碰撞
+	if NetworkManager.is_multiplayer and not NetworkManager.is_server():
+		return
 	var owner_node = area.owner
 	if owner_node is Zombie000Base:
 		if lane == owner_node.lane:
@@ -39,6 +42,15 @@ func _start_mower():
 	SoundManager.play_other_SFX("pool_cleaner")
 	animation_player.play("PoolCleaner_land")
 	_mower_run_all_zombie_on_start()
+	## 联机模式: Host 广播小推车启动给客户端
+	if NetworkManager.is_multiplayer and NetworkManager.is_server():
+		NetworkManager.broadcast_lawn_mower_start.rpc(lane)
+
+## 网络同步: 客户端收到广播后启动小推车
+func _start_mower_from_network():
+	is_moving = true
+	SoundManager.play_other_SFX("pool_cleaner")
+	animation_player.play("PoolCleaner_land")
 
 func _on_area_exited(area: Area2D) -> void:
 	var owner_node = area.owner
@@ -57,6 +69,10 @@ func suck_end():
 
 ## 小推车碾压一个僵尸
 func _mower_run_one_zombie(zombie :Zombie000Base):
+	## 联机模式: Host 广播僵尸被碾压给客户端
+	if NetworkManager.is_multiplayer and NetworkManager.is_server():
+		if zombie.network_id >= 0:
+			NetworkManager.broadcast_zombie_mowered.rpc(zombie.network_id, lane)
 	zombie.character_death_disappear()
 	move_speed = ori_move_speed / 4
 	is_zombie = true

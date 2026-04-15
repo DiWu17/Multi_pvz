@@ -647,8 +647,10 @@ func request_plant(plant_type: int, row: int, col: int, is_imitater: bool = fals
 		plant_type as CharacterRegistry.PlantType,
 		CharacterRegistry.PlantInfoAttribute.SunCost
 	)
+	## 非普通卡槽模式（传送带/金币等）无需阳光检查
 	var card_slot = main_game.card_manager.card_slot_battle
-	if card_slot == null or card_slot.sun_value < sun_cost:
+	var card_mode = main_game.card_manager.card_mode
+	if card_mode == ConstLevelData.E_CardMode.Norm and (card_slot == null or card_slot.sun_value < sun_cost):
 		_plant_rejected.rpc_id(peer_id, "阳光不足")
 		return
 
@@ -661,9 +663,10 @@ func request_plant(plant_type: int, row: int, col: int, is_imitater: bool = fals
 		_plant_rejected.rpc_id(peer_id, "无法种植在此格子")
 		return
 
-	# 验证通过：立即扣除阳光并同步（原子操作，防止重复扣除）
-	card_slot.sun_value -= sun_cost
-	sync_sun_value.rpc(card_slot.sun_value)
+	# 验证通过：普通模式扣除阳光并同步
+	if card_mode == ConstLevelData.E_CardMode.Norm and card_slot:
+		card_slot.sun_value -= sun_cost
+		sync_sun_value.rpc(card_slot.sun_value)
 
 	# 执行种植并广播（Host 生成随机动画速度，确保主客端动画同步）
 	var init_speed := randf_range(0.9, 1.1)
@@ -816,7 +819,7 @@ func broadcast_plant_sun_spawn(sun_id: int, pos_x: float, pos_y: float, rand_x: 
 #region 僵尸同步
 ## Host → 客户端: 生成僵尸（含网络 ID）
 @rpc("authority", "reliable")
-func broadcast_zombie_spawn(zombie_type: int, lane: int, pos_x: float, pos_y: float, net_id: int = -1, anim_statuses: Array = []) -> void:
+func broadcast_zombie_spawn(zombie_type: int, lane: int, pos_x: float, pos_y: float, net_id: int = -1) -> void:
 	# 仅客户端处理（Host 已经本地生成过了）
 	if multiplayer.is_server():
 		return
@@ -837,11 +840,6 @@ func broadcast_zombie_spawn(zombie_type: int, lane: int, pos_x: float, pos_y: fl
 	if zombie and net_id >= 0:
 		zombie.network_id = net_id
 		main_game.zombie_manager._zombie_by_net_id[net_id] = zombie
-	## 客户端同步动画状态（覆盖本地随机值）
-	if zombie and zombie is Zombie001Norm and anim_statuses.size() == 3:
-		zombie.idle_status = anim_statuses[0]
-		zombie.walk_status = anim_statuses[1]
-		zombie.death_status = anim_statuses[2]
 
 ## Host → 客户端: 僵尸死亡
 @rpc("authority", "reliable")
@@ -989,6 +987,42 @@ func broadcast_game_lose() -> void:
 func sync_wave_progress(_curr_wave: int, _max_wave: int) -> void:
 	# 客户端更新进度条
 	pass
+
+## Host → 客户端: 小推车启动
+@rpc("authority", "reliable")
+func broadcast_lawn_mower_start(lane: int) -> void:
+	if multiplayer.is_server():
+		return
+	var main_game = Global.main_game
+	if not is_instance_valid(main_game):
+		return
+	var gim = main_game.game_item_manager.gim_lawn_mover
+	if lane >= 0 and lane < gim.all_lawn_movers.size():
+		var mower = gim.all_lawn_movers[lane]
+		if is_instance_valid(mower) and not mower.is_moving:
+			mower._start_mower_from_network()
+
+## Host → 客户端: 僵尸被小推车碾压
+@rpc("authority", "reliable")
+func broadcast_zombie_mowered(net_id: int, lane: int) -> void:
+	if multiplayer.is_server():
+		return
+	var main_game = Global.main_game
+	if not is_instance_valid(main_game):
+		return
+	var zombie = main_game.zombie_manager.get_zombie_by_net_id(net_id)
+	if not is_instance_valid(zombie) or zombie.is_death:
+		return
+	var mower: LawnMover = null
+	var gim = main_game.game_item_manager.gim_lawn_mover
+	if lane >= 0 and lane < gim.all_lawn_movers.size():
+		mower = gim.all_lawn_movers[lane]
+	## 恢复正常死亡阈值（客户端傀儡模式下 death_hp 被设为 -99999）
+	zombie.hp_component.set_death_hp(0)
+	if is_instance_valid(mower):
+		zombie.be_mowered_run(mower)
+	else:
+		zombie.character_death()
 #endregion
 
 #endregion

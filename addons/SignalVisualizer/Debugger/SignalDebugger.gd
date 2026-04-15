@@ -120,7 +120,9 @@ func generate_signal_graph() -> SignalGraph:
 
 func _connect_to_signal(signal_item: SignalDescription):
 	var root_node = get_tree().current_scene
-	var _execute: Callable = func (args = []): _on_signal_execution(signal_item.signal_name, signal_item.node_name, args)
+	var sig_name := signal_item.signal_name
+	var node_name := signal_item.node_name
+	var _execute: Callable = func (args = []): _on_signal_execution(sig_name, node_name, args)
 	if root_node.name == signal_item.node_name:
 		root_node.connect(signal_item.signal_name, _execute)
 		_lambda_map[signal_item] = _execute

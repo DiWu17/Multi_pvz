@@ -40,3 +40,12 @@ func _start_mower():
 	animation_player.play("RoofCleaner")
 	SoundManager.play_other_SFX("lawnmower")
 	_mower_run_all_zombie_on_start()
+	## 联机模式: Host 广播小推车启动给客户端
+	if NetworkManager.is_multiplayer and NetworkManager.is_server():
+		NetworkManager.broadcast_lawn_mower_start.rpc(lane)
+
+## 网络同步: 客户端收到广播后启动小推车
+func _start_mower_from_network():
+	is_moving = true
+	animation_player.play("RoofCleaner")
+	SoundManager.play_other_SFX("lawnmower")

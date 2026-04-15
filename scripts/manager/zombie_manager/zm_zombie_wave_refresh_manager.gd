@@ -124,7 +124,12 @@ func judge_half_refresh(all_loss_hp:int, wave:int):
 
 ## 判断全部死亡刷新
 func judge_total_refresh(zombie_num:int):
-	if curr_can_refresh_type == E_RefreshType.TotalRefresh and zombie_num<=0:
+	if zombie_num > 0:
+		return
+
+	## 兼容普通/旗帜波：部分死亡路径不会触发掉血信号，
+	## 但僵尸数已经为 0 时也应允许进入下一波（仍受最小波次时间限制）。
+	if curr_can_refresh_type == E_RefreshType.TotalRefresh or curr_can_refresh_type == E_RefreshType.HalfRefresh:
 		_trigger_refresh()
 
 ## 触发提前刷新
