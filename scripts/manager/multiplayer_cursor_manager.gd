@@ -14,7 +14,8 @@ var sync_timer: Timer
 ## 光标同步频率 (10Hz)
 const SYNC_INTERVAL := 0.1
 const NET_HUD_UPDATE_INTERVAL := 0.5
-const PING_KEEP_TIME := 0.5
+const PING_KEEP_TIME := 1.5
+const PING_SFX := preload("res://assets/audio/SFX/button/points.ogg")
 
 ## 铲子纹理
 const SHOVEL_TEXTURE := preload("res://assets/image/ui/ui_card/Shovel.png")
@@ -259,6 +260,14 @@ func _on_remote_ping_marker(peer_id: int, world_pos: Vector2) -> void:
 	if _peer_ping_nodes.has(peer_id) and is_instance_valid(_peer_ping_nodes[peer_id]):
 		_peer_ping_nodes[peer_id].queue_free()
 
+	# 播放标点音效
+	var sfx = AudioStreamPlayer.new()
+	sfx.stream = PING_SFX
+	sfx.bus = "SFX"
+	add_child(sfx)
+	sfx.play()
+	sfx.finished.connect(sfx.queue_free)
+
 	var marker_root = Node2D.new()
 	marker_root.name = "PingMarker_%d" % peer_id
 	marker_root.global_position = world_pos
@@ -268,27 +277,49 @@ func _on_remote_ping_marker(peer_id: int, world_pos: Vector2) -> void:
 
 	var color = NetworkManager.get_player_color(peer_id)
 
+	# 圆点标记 — 描边
 	var marker = Label.new()
-	marker.text = "!"
-	marker.position = Vector2(-6, -30)
-	marker.add_theme_font_size_override("font_size", 36)
+	marker.text = "●"
+	marker.position = Vector2(-16, -40)
+	marker.add_theme_font_size_override("font_size", 48)
 	marker.add_theme_color_override("font_color", color)
+	marker.add_theme_constant_override("outline_size", 6)
+	marker.add_theme_color_override("font_outline_color", Color.BLACK)
 	marker_root.add_child(marker)
 
+	# 玩家名称 — 稍大一些
 	var name_label = Label.new()
 	name_label.text = NetworkManager.get_player_name(peer_id)
-	name_label.position = Vector2(-40, -46)
-	name_label.add_theme_font_size_override("font_size", 12)
+	name_label.position = Vector2(-40, -66)
+	name_label.add_theme_font_size_override("font_size", 16)
 	name_label.add_theme_color_override("font_color", color)
+	name_label.add_theme_constant_override("outline_size", 3)
+	name_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	marker_root.add_child(name_label)
+
+	# 圆环指示器
+	var ring = Node2D.new()
+	ring.name = "Ring"
+	marker_root.add_child(ring)
+	var ring_draw := func():
+		ring.draw_arc(Vector2.ZERO, 18, 0, TAU, 32, color, 2.5, true)
+	ring.draw.connect(ring_draw)
+	ring.queue_redraw()
 
 	_peer_ping_nodes[peer_id] = marker_root
 
 	var tween = create_tween()
-	tween.tween_property(marker_root, "modulate:a", 1.0, 0.08)
-	tween.parallel().tween_property(marker_root, "scale", Vector2(1.15, 1.15), 0.12).from(Vector2(0.35, 0.35))
+	# 弹入
+	tween.tween_property(marker_root, "modulate:a", 1.0, 0.06)
+	tween.parallel().tween_property(marker_root, "scale", Vector2(1.2, 1.2), 0.10).from(Vector2(0.2, 0.2)).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	# 脉冲
+	tween.tween_property(marker_root, "scale", Vector2(1.0, 1.0), 0.12).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(marker_root, "scale", Vector2(1.15, 1.15), 0.25).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(marker_root, "scale", Vector2(1.0, 1.0), 0.25).set_ease(Tween.EASE_IN_OUT)
+	# 保持
 	tween.tween_interval(PING_KEEP_TIME)
-	tween.tween_property(marker_root, "modulate:a", 0.0, 0.22)
+	# 淡出
+	tween.tween_property(marker_root, "modulate:a", 0.0, 0.35)
 	tween.finished.connect(func():
 		if is_instance_valid(marker_root):
 			marker_root.queue_free()
