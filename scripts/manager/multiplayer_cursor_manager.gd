@@ -38,6 +38,9 @@ var _peer_tweens: Dictionary = {}
 ## 每个 peer 当前标点节点 {peer_id: Node2D}
 var _peer_ping_nodes: Dictionary = {}
 
+## 标点专用高层 CanvasLayer
+var _ping_layer: CanvasLayer = null
+
 ## 网络状态 HUD
 var _net_hud_layer: CanvasLayer = null
 var _net_status_label: Label = null
@@ -268,12 +271,17 @@ func _on_remote_ping_marker(peer_id: int, world_pos: Vector2) -> void:
 	sfx.play()
 	sfx.finished.connect(sfx.queue_free)
 
+	if not _ping_layer:
+		_ping_layer = CanvasLayer.new()
+		_ping_layer.name = "PingMarkerLayer"
+		_ping_layer.layer = 100
+		add_child(_ping_layer)
+
 	var marker_root = Node2D.new()
 	marker_root.name = "PingMarker_%d" % peer_id
 	marker_root.global_position = world_pos
-	marker_root.z_index = 180
 	marker_root.modulate = Color(1, 1, 1, 0)
-	add_child(marker_root)
+	_ping_layer.add_child(marker_root)
 
 	var color = NetworkManager.get_player_color(peer_id)
 
