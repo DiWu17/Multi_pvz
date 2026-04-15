@@ -253,6 +253,8 @@ func event_bus_subscribe():
 	EventBus.subscribe("start_next_round_game", start_next_round_game)
 	## 更新阳光收集位置
 	EventBus.subscribe("update_marker_2d_sun_target", update_marker_2d_sun_target)
+	## 多人模式所有玩家投票重新开始
+	EventBus.subscribe("all_players_restart_game", _on_all_players_restart_game)
 
 
 ## 更新阳光收集位置
@@ -530,6 +532,21 @@ func throw_to(node:Node2D, target_pos: Vector2, duration: float = 1.0):
 
 	tween.parallel().tween_property(node, "position:y", peak_pos.y, duration / 2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(node, "position:y", target_pos.y, duration / 2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN).set_delay(duration / 2)
+
+## 多人模式所有玩家都投票重新开始
+func _on_all_players_restart_game() -> void:
+	print("所有玩家同意重新开始")
+	# 重置投票状态
+	if is_multiplayer:
+		NetworkManager.reset_restart_votes()
+		NetworkManager.reset_card_chosen_votes()
+	
+	# 重新加载场景
+	re_main_game()
+	TreePauseManager.end_tree_pause_clear_all_pause_factors()
+	Global.time_scale = 1.0
+	Engine.time_scale = Global.time_scale
+	get_tree().reload_current_scene()
 
 #endregion
 

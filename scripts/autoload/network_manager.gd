@@ -107,6 +107,7 @@ func create_server(port: int = DEFAULT_PORT, player_name: String = "Host") -> Er
 		"color_index": 0,
 		"is_ready": false,
 		"is_card_chosen": false,
+		"is_restart_voted": false,
 	})
 	print("NetworkManager: 服务器创建成功，端口: %d" % port)
 	return OK
@@ -155,6 +156,7 @@ func _on_relay_room_created(room_code: String) -> void:
 		"color_index": 0,
 		"is_ready": false,
 		"is_card_chosen": false,
+		"is_restart_voted": false,
 	})
 	relay_room_created.emit(room_code)
 	print("NetworkManager: 中继房间创建成功，房间码: %s" % room_code)
@@ -342,6 +344,7 @@ func _request_register(info: Dictionary) -> void:
 		"color_index": color_index,
 		"is_ready": false,
 		"is_card_chosen": false,
+		"is_restart_voted": false,
 	})
 	# 将完整玩家列表广播给所有人
 	_broadcast_player_list.rpc()
@@ -440,9 +443,10 @@ func _on_game_start() -> void:
 ## Host → 所有人: 广播选定的关卡
 @rpc("authority", "call_local", "reliable")
 func broadcast_level_chosen(res_path: String, scene_key: int) -> void:
-	## 重置所有玩家的选卡状态
+	## 重置所有玩家的选卡状态和重新开始投票状态
 	for pid in players:
 		players[pid]["is_card_chosen"] = false
+		players[pid]["is_restart_voted"] = false
 	lobby_state = LobbyState.CHOOSING
 	var level_res = load(res_path)
 	if level_res is ResourceLevelData:
@@ -485,6 +489,58 @@ func _check_all_cards_chosen() -> void:
 @rpc("authority", "call_local", "reliable")
 func _on_all_cards_chosen() -> void:
 	EventBus.push_event("card_slot_norm_start_game")
+#endregion
+
+#region 重新开始投票
+## 信号：所有玩家投票重新开始
+signal all_restart_voted
+
+## 重新开始投票通知（自动区分 Host/Client）
+func notify_restart_vote() -> void:
+	if is_server():
+		_set_restart_vote(multiplayer.get_unique_id())
+	else:
+		_set_restart_vote.rpc_id(1, multiplayer.get_unique_id())
+
+## → Host: 标记重新开始投票
+@rpc("any_peer", "call_local", "reliable")
+func _set_restart_vote(peer_id: int) -> void:
+	if not multiplayer.is_server():
+		return
+	# 验证 sender
+	var sender = multiplayer.get_remote_sender_id()
+	if sender == 0:
+		sender = 1  # 本地调用
+	if sender != peer_id and sender != 1:
+		return
+
+	if players.has(peer_id):
+		players[peer_id]["is_restart_voted"] = true
+		_check_all_restart_votes()
+
+## 检查是否全员投票重新开始
+func _check_all_restart_votes() -> void:
+	for pid in players:
+		if not players[pid].get("is_restart_voted", false):
+			return
+	# 全员同意重新开始
+	_on_all_restart_voted.rpc()
+
+## Host → 所有人: 全员投票同意重新开始
+@rpc("authority", "call_local", "reliable")
+func _on_all_restart_voted() -> void:
+	EventBus.push_event("all_players_restart_game")
+	all_restart_voted.emit()
+
+## 重置重新开始投票状态（切换关卡时调用）
+func reset_restart_votes() -> void:
+	for pid in players:
+		players[pid]["is_restart_voted"] = false
+
+## 重置选卡投票状态（重新开始游戏时调用）
+func reset_card_chosen_votes() -> void:
+	for pid in players:
+		players[pid]["is_card_chosen"] = false
 #endregion
 
 #region 难度缩放

@@ -44,14 +44,14 @@ theme_override_constants/margin_bottom = 16
 [node name="VBoxContainer" type="VBoxContainer" parent="PanelMain/MarginContainer" unique_id=1754713948]
 layout_mode = 2
 
-[node name="HBoxTitle" type="HBoxContainer" parent="PanelMain/MarginContainer/VBoxContainer"]
+[node name="HBoxTitle" type="HBoxContainer" parent="PanelMain/MarginContainer/VBoxContainer" unique_id=387445515]
 layout_mode = 2
 
-[node name="BtnBack" type="Button" parent="PanelMain/MarginContainer/VBoxContainer/HBoxTitle"]
+[node name="BtnBack" type="Button" parent="PanelMain/MarginContainer/VBoxContainer/HBoxTitle" unique_id=1890411639]
 layout_mode = 2
 text = "返回"
 
-[node name="Title" type="Label" parent="PanelMain/MarginContainer/VBoxContainer/HBoxTitle"]
+[node name="Title" type="Label" parent="PanelMain/MarginContainer/VBoxContainer/HBoxTitle" unique_id=1187672473]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "多人合作模式"

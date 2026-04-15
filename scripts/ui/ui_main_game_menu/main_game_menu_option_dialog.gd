@@ -69,14 +69,21 @@ func encyclopedia():
 
 ## 重新开始
 func resume_game():
-	EventBus.push_event("change_is_mouse_visibel_on_hammer", true)
-
-	Global.main_game.re_main_game()
-
-	TreePauseManager.end_tree_pause_clear_all_pause_factors()
-	Global.time_scale = 1.0
-	Engine.time_scale = Global.time_scale
-	get_tree().reload_current_scene()
+	## 多人模式：发起投票
+	if NetworkManager.is_multiplayer:
+		NetworkManager.notify_restart_vote()
+		# 关闭菜单，等待投票结果
+		visible = false
+		if not NetworkManager.is_multiplayer:
+			TreePauseManager.end_tree_pause(TreePauseManager.E_PauseFactor.Menu)
+	else:
+		## 单人模式：直接重新开始
+		EventBus.push_event("change_is_mouse_visibel_on_hammer", true)
+		Global.main_game.re_main_game()
+		TreePauseManager.end_tree_pause_clear_all_pause_factors()
+		Global.time_scale = 1.0
+		Engine.time_scale = Global.time_scale
+		get_tree().reload_current_scene()
 
 
 ## 返回主菜单
