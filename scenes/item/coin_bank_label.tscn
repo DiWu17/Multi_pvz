@@ -8,6 +8,7 @@
 layout_mode = 3
 anchors_preset = 0
 theme = ExtResource("1_xr4kl")
+mouse_filter = 2
 script = ExtResource("2_q46qq")
 
 [node name="TextureRect" type="TextureRect" parent="."]

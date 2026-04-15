@@ -8,6 +8,7 @@ class_name CoinBankLabel
 @onready var marker_2d_coin_target: Marker2D = $Marker2DCoinTarget
 
 func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	Global.global_game_state.coin_value_changed.connect(_on_coin_value_changed)
 	update_label()
 
