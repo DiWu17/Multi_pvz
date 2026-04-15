@@ -864,6 +864,21 @@ func broadcast_zombie_death(net_id: int) -> void:
 		print("[Net] broadcast_zombie_death 兜底触发 character_death, net_id=%d" % net_id)
 		zombie.character_death()
 
+## Host → 客户端: 僵尸被地刺扎死（雪橇车/投石车专用）
+@rpc("authority", "reliable")
+func broadcast_zombie_caltrop(net_id: int) -> void:
+	if multiplayer.is_server():
+		return
+	var main_game = Global.main_game
+	if not is_instance_valid(main_game):
+		return
+	var zombie = main_game.zombie_manager.get_zombie_by_net_id(net_id)
+	if not is_instance_valid(zombie) or zombie.is_death:
+		return
+	## 恢复正常死亡阈值（客户端傀儡模式下 death_hp 被设为 -99999）
+	zombie.hp_component.set_death_hp(0)
+	zombie.be_caltrop()
+
 ## Host → 客户端: 僵尸被魅惑
 @rpc("authority", "reliable")
 func broadcast_zombie_hypno(net_id: int) -> void:
