@@ -49,6 +49,10 @@ func _ready() -> void:
 	#if get_tree().current_scene != MainGameManager:
 	if not get_tree().current_scene is MainGameManager:
 		return
+	## 多人模式客户端：不启动独立计时器，由 Host 广播触发发光
+	if NetworkManager.is_multiplayer and not NetworkManager.is_server():
+		EventBus.subscribe("main_game_progress_update", _on_main_game_progress_update)
+		return
 	create_interval = randf_range(create_time_range_first.x, create_time_range_first.y)
 	create_sun_timer.start(create_interval)
 
@@ -122,13 +126,19 @@ func _spawn_sun():
 
 		new_sun.spawn_sun_tween.finished.connect(new_sun.on_sun_tween_finished)
 
-		## 多人模式：注册阳光并广播
+		## 多人模式：注册阳光并广播（携带产阳光植物的行列位置）
 		if NetworkManager.is_multiplayer:
 			var day_sun_mgr = Global.main_game.day_suns_manager
 			var sun_id = day_sun_mgr._next_sun_id()
 			new_sun.set_meta("sun_id", sun_id)
 			day_sun_mgr.active_suns[sun_id] = new_sun
-			NetworkManager.broadcast_plant_sun_spawn.rpc(sun_id, spawn_pos.x, spawn_pos.y, rand_x, sun_value)
+			var plant_owner: Plant000Base = get_parent() as Plant000Base
+			var p_row := -1
+			var p_col := -1
+			if plant_owner:
+				p_row = plant_owner.row_col.x
+				p_col = plant_owner.row_col.y
+			NetworkManager.broadcast_plant_sun_spawn.rpc(sun_id, spawn_pos.x, spawn_pos.y, rand_x, sun_value, p_row, p_col)
 
 
 ## 创建阳光全流程：身体发光、生产阳光、身体不发光
@@ -138,6 +148,13 @@ func create_sun():
 	tween.tween_method(func(val): body.set_other_color(BodyCharacter.E_ChangeColors.CreateSunColor, val), Color(1, 1, 1), Color(2, 2, 2), 0.5)
 	# 在第一个 tween 完成后、第二个 tween 开始前调用函数
 	tween.tween_callback(Callable(self, "_spawn_sun"))
+	tween.tween_method(func(val): body.set_other_color(BodyCharacter.E_ChangeColors.CreateSunColor, val), Color(2, 2, 2), Color(1, 1, 1), 0.5)
+
+## 仅播放发光动画（客户端收到广播时调用，不生产阳光）
+func play_glow_only():
+	SoundManager.play_character_SFX(&"Throw1")
+	var tween = create_tween()
+	tween.tween_method(func(val): body.set_other_color(BodyCharacter.E_ChangeColors.CreateSunColor, val), Color(1, 1, 1), Color(2, 2, 2), 0.5)
 	tween.tween_method(func(val): body.set_other_color(BodyCharacter.E_ChangeColors.CreateSunColor, val), Color(2, 2, 2), Color(1, 1, 1), 0.5)
 
 

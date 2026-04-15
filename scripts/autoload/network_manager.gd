@@ -665,12 +665,13 @@ func request_plant(plant_type: int, row: int, col: int, is_imitater: bool = fals
 	card_slot.sun_value -= sun_cost
 	sync_sun_value.rpc(card_slot.sun_value)
 
-	# 执行种植并广播
-	_execute_plant.rpc(plant_type, row, col, is_imitater, peer_id)
+	# 执行种植并广播（Host 生成随机动画速度，确保主客端动画同步）
+	var init_speed := randf_range(0.9, 1.1)
+	_execute_plant.rpc(plant_type, row, col, is_imitater, peer_id, init_speed)
 
 ## Host → 所有人: 执行种植
 @rpc("authority", "call_local", "reliable")
-func _execute_plant(plant_type: int, row: int, col: int, is_imitater: bool, owner_id: int) -> void:
+func _execute_plant(plant_type: int, row: int, col: int, is_imitater: bool, owner_id: int, init_speed: float = -1.0) -> void:
 	var main_game = Global.main_game
 	if not is_instance_valid(main_game):
 		return
@@ -678,6 +679,9 @@ func _execute_plant(plant_type: int, row: int, col: int, is_imitater: bool, owne
 	var plant = plant_cell.create_plant(plant_type as CharacterRegistry.PlantType, is_imitater)
 	if plant is Plant000Base:
 		plant.owner_peer_id = owner_id
+		## 同步动画随机速度，防止主客端动画不一致
+		if init_speed > 0:
+			plant.network_init_speed = init_speed
 		GameLogger.log_net("_execute_plant: 种植 type=%d row=%d col=%d owner=%d" % [plant_type, row, col, owner_id])
 
 ## Host → Client: 种植被拒绝
@@ -794,11 +798,19 @@ func broadcast_sun_collected(sun_id: int, new_sun_value: int) -> void:
 
 ## Host → 客户端: 植物产生阳光（向日葵等）
 @rpc("authority", "reliable")
-func broadcast_plant_sun_spawn(sun_id: int, pos_x: float, pos_y: float, rand_x: float, sun_val: int = 25) -> void:
+func broadcast_plant_sun_spawn(sun_id: int, pos_x: float, pos_y: float, rand_x: float, sun_val: int = 25, plant_row: int = -1, plant_col: int = -1) -> void:
 	var main_game = Global.main_game
 	if not is_instance_valid(main_game):
 		return
 	main_game.day_suns_manager.spawn_plant_sun_from_network(sun_id, Vector2(pos_x, pos_y), rand_x, sun_val)
+	## 在对应植物上播放发光动画
+	if plant_row >= 0 and plant_col >= 0:
+		var plant_cell: PlantCell = main_game.plant_cell_manager.all_plant_cells[plant_row][plant_col]
+		var plant = plant_cell.plant_in_cell.get(CharacterRegistry.PlacePlantInCell.Norm)
+		if is_instance_valid(plant):
+			var create_sun_comp: CreateSunComponent = plant.get_node_or_null("CreateSunComponent")
+			if create_sun_comp:
+				create_sun_comp.play_glow_only()
 #endregion
 
 #region 僵尸同步

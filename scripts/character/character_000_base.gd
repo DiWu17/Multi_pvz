@@ -68,6 +68,9 @@ var ice_effect:IceEffect
 ## 是否可以触发亡语(爆炸\大嘴花\铲子不可以触发)
 var is_can_death_language:=true
 
+## 联机模式下由 Host 指定的初始随机速度（>0 时生效，覆盖本地 randf_range）
+var network_init_speed: float = -1.0
+
 ## 速度改变信号 speed_factor_product: 速度系数乘积
 signal signal_update_speed(speed_factor_product:float)
 
@@ -177,8 +180,13 @@ func ready_garden():
 ## 随机初始化角色速度
 func init_random_speed():
 	#print("随机初始化角色速度")
-	## 初始化角色速度
-	update_speed_factor(randf_range(random_speed_range.x, random_speed_range.y), E_Influence_Speed_Factor.InitRandomSpeed)
+	## 联机模式下使用 Host 指定的速度，保证主机和客户端动画同步
+	var speed: float
+	if network_init_speed > 0:
+		speed = network_init_speed
+	else:
+		speed = randf_range(random_speed_range.x, random_speed_range.y)
+	update_speed_factor(speed, E_Influence_Speed_Factor.InitRandomSpeed)
 
 ## 修改速度，发射信号
 func update_speed_factor(value: float, influent_speed_factor:E_Influence_Speed_Factor) -> void:
