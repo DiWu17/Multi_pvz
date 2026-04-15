@@ -263,7 +263,10 @@ func _on_zombie_dead(zombie: Zombie000Base) -> void:
 
 		## 多人模式：Host 广播僵尸死亡
 		if main_game.is_multiplayer and NetworkManager.is_server() and zombie.network_id >= 0:
-			NetworkManager.broadcast_zombie_death.rpc(zombie.network_id)
+			if zombie.get("is_caltrop") == true:
+				NetworkManager.broadcast_zombie_caltrop.rpc(zombie.network_id)
+			else:
+				NetworkManager.broadcast_zombie_death.rpc(zombie.network_id)
 
 		## 如果到了最后一波刷新,且僵尸全部死亡
 		if is_end_wave and curr_zombie_num == 0:
@@ -275,7 +278,11 @@ func _on_zombie_dead(zombie: Zombie000Base) -> void:
 
 ## 根据网络 ID 查找僵尸
 func get_zombie_by_net_id(net_id: int) -> Zombie000Base:
-	return _zombie_by_net_id.get(net_id, null)
+	var zombie = _zombie_by_net_id.get(net_id, null)
+	if zombie != null and not is_instance_valid(zombie):
+		_zombie_by_net_id.erase(net_id)
+		return null
+	return zombie
 #endregion
 
 #region 波次刷新

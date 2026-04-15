@@ -96,6 +96,8 @@ func hp_stage_zamboni_change(curr_hp_stage:int):
 
 ## 死亡爆炸特效
 func zamboni_death_effect():
+	if not is_death:
+		character_death()
 	death_bomb.activate_it()
 	SoundManager.play_character_SFX(&"explosion")
 	queue_free()
@@ -120,10 +122,6 @@ func be_caltrop():
 	is_caltrop = true
 	character_death_not_disappear()
 	move_component.update_move_factor(true, MoveComponent.E_MoveFactor.IsAnimGap)
-	## 多人模式：Host 广播地刺扎死事件
-	var main_game_node = get_tree().current_scene
-	if main_game_node is MainGameManager and main_game_node.is_multiplayer and NetworkManager.is_server() and network_id >= 0:
-		NetworkManager.broadcast_zombie_caltrop.rpc(network_id)
 	## 等待翘起动画结束后淡出清理
 	await get_tree().create_timer(1.0).timeout
 	if is_instance_valid(self):

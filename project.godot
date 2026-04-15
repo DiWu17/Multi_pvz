@@ -31,6 +31,7 @@ EventBus="*res://scripts/autoload/event_bus.gd"
 TreePauseManager="*res://scripts/autoload/tree_pause_manager.gd"
 NetworkManager="*res://scripts/autoload/network_manager.gd"
 GameLogger="*res://scripts/autoload/logger.gd"
+DebugConsole="*res://scripts/autoload/debug_console.gd"
 
 [debug]
 
