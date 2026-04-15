@@ -61,8 +61,9 @@ func _ready() -> void:
 
 	_create_network_hud()
 	NetworkManager.net_stats_updated.connect(_on_net_stats_updated)
-	NetworkManager.server_disconnected.connect(_on_disconnected)
-	NetworkManager.connection_failed.connect(_on_disconnected)
+	NetworkManager.server_disconnected.connect(_on_host_disconnected)
+	NetworkManager.connection_failed.connect(_on_host_disconnected)
+	NetworkManager.player_left_with_name.connect(_on_client_disconnected)
 
 func _exit_tree() -> void:
 	if EventBus.has_signal("remote_cursor_update"):
@@ -71,10 +72,12 @@ func _exit_tree() -> void:
 		EventBus.unsubscribe("remote_ping_marker", _on_remote_ping_marker)
 	if NetworkManager.net_stats_updated.is_connected(_on_net_stats_updated):
 		NetworkManager.net_stats_updated.disconnect(_on_net_stats_updated)
-	if NetworkManager.server_disconnected.is_connected(_on_disconnected):
-		NetworkManager.server_disconnected.disconnect(_on_disconnected)
-	if NetworkManager.connection_failed.is_connected(_on_disconnected):
-		NetworkManager.connection_failed.disconnect(_on_disconnected)
+	if NetworkManager.server_disconnected.is_connected(_on_host_disconnected):
+		NetworkManager.server_disconnected.disconnect(_on_host_disconnected)
+	if NetworkManager.connection_failed.is_connected(_on_host_disconnected):
+		NetworkManager.connection_failed.disconnect(_on_host_disconnected)
+	if NetworkManager.player_left_with_name.is_connected(_on_client_disconnected):
+		NetworkManager.player_left_with_name.disconnect(_on_client_disconnected)
 	# 清除所有虚影
 	_peer_highlighted_cells.clear()
 	for pid in _peer_cell_ghosts.keys():
@@ -105,8 +108,10 @@ func _create_network_hud() -> void:
 	_disconnect_label = Label.new()
 	_disconnect_label.name = "DisconnectLabel"
 	_disconnect_label.position = Vector2(16, 34)
-	_disconnect_label.add_theme_font_size_override("font_size", 16)
-	_disconnect_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
+	_disconnect_label.add_theme_font_size_override("font_size", 18)
+	_disconnect_label.add_theme_color_override("font_color", Color(1.0, 0.1, 0.1))
+	_disconnect_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0))
+	_disconnect_label.add_theme_constant_override("outline_size", 3)
 	_disconnect_label.text = ""
 	_disconnect_label.visible = false
 	root.add_child(_disconnect_label)
@@ -136,10 +141,34 @@ func _update_net_hud_text() -> void:
 func _on_net_stats_updated(_ping_ms: int, _packet_loss: float) -> void:
 	_update_net_hud_text()
 
-func _on_disconnected() -> void:
+## 客户端：主机断开连接 → 显示提示并自动返回主菜单
+func _on_host_disconnected() -> void:
 	if is_instance_valid(_disconnect_label):
-		_disconnect_label.text = "网络连接已断开，请返回大厅重连"
+		_disconnect_label.text = "主机已断开连接，3秒后返回主菜单..."
 		_disconnect_label.visible = true
+	NetworkManager.disconnect_from_server()
+	# 3 秒后自动返回主菜单
+	var timer := get_tree().create_timer(3.0)
+	timer.timeout.connect(func():
+		TreePauseManager.end_tree_pause_clear_all_pause_factors()
+		Global.time_scale = 1.0
+		Engine.time_scale = Global.time_scale
+		get_tree().change_scene_to_file(Global.main_scene_registry.MainScenesMap[MainSceneRegistry.MainScenes.StartMenu])
+	)
+
+## 主机端：客户端断开连接 → 显示提示
+func _on_client_disconnected(peer_id: int, player_name: String) -> void:
+	if not NetworkManager.is_server():
+		return
+	if is_instance_valid(_disconnect_label):
+		_disconnect_label.text = "玩家 \"%s\" 已断开连接" % player_name
+		_disconnect_label.visible = true
+		# 5 秒后自动隐藏提示
+		var timer := get_tree().create_timer(5.0)
+		timer.timeout.connect(func():
+			if is_instance_valid(_disconnect_label):
+				_disconnect_label.visible = false
+		)
 
 #region 本地光标状态发送
 ## 定时发送本地光标状态

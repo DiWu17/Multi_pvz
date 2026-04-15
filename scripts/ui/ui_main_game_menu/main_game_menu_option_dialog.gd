@@ -95,6 +95,8 @@ func resume_game():
 ## 返回主菜单
 func return_main_menu():
 	EventBus.push_event("change_is_mouse_visibel_on_hammer", true)
+	if NetworkManager.is_multiplayer:
+		NetworkManager.disconnect_from_server()
 	TreePauseManager.end_tree_pause_clear_all_pause_factors()
 	Global.time_scale = 1.0
 	Engine.time_scale = Global.time_scale

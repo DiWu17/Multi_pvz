@@ -7,6 +7,8 @@ extends Node
 signal player_joined(peer_id: int, player_info: Dictionary)
 ## 玩家离开
 signal player_left(peer_id: int)
+## 玩家离开（附带玩家名称）
+signal player_left_with_name(peer_id: int, player_name: String)
 ## 服务器已连接
 signal server_connected
 ## 服务器断开
@@ -199,8 +201,12 @@ func _on_peer_connected(peer_id: int) -> void:
 
 func _on_peer_disconnected(peer_id: int) -> void:
 	GameLogger.log_net("玩家断开 peer_id=%d" % peer_id)
+	var player_name := "未知玩家"
+	if players.has(peer_id) and players[peer_id].has("name"):
+		player_name = players[peer_id]["name"]
 	players.erase(peer_id)
 	player_left.emit(peer_id)
+	player_left_with_name.emit(peer_id, player_name)
 
 	# 如果在游戏中，重新计算难度
 	if lobby_state == LobbyState.PLAYING:
