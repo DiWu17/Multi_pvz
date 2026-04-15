@@ -19,6 +19,18 @@ func _ready():
 	Global.save_service.save_now()
 
 func _on_trophy_button_pressed() -> void:
+	## 多人模式：通知其他玩家自动捡起奖杯
+	if NetworkManager.is_multiplayer:
+		NetworkManager.broadcast_trophy_pickup.rpc()
+		return  # broadcast_trophy_pickup 有 call_local，会在本地也执行 _do_pickup
+	_do_pickup()
+
+## 实际执行捡起奖杯的表现逻辑（本地 & 远端共用）
+func _do_pickup() -> void:
+	if $TrophyButton.disabled:
+		return  # 已经捡起过，防止重复
+	## 渐停背景音乐
+	SoundManager.fade_out_bgm(1.5)
 	SoundManager.play_other_SFX("winmusic")
 	$TrophyButton.disabled = true
 	var center = get_viewport().get_visible_rect().size / 2 + Global.main_game.camera_2d.global_position

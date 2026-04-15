@@ -960,6 +960,17 @@ func broadcast_game_win(trophy_pos_x: float, trophy_pos_y: float) -> void:
 		return
 	main_game._do_create_trophy(Vector2(trophy_pos_x, trophy_pos_y))
 
+## 任意一方 → 所有人: 捡起奖杯（任意玩家捡起后，其他玩家自动捡起）
+@rpc("any_peer", "call_local", "reliable")
+func broadcast_trophy_pickup() -> void:
+	var main_game = Global.main_game
+	if not is_instance_valid(main_game):
+		return
+	## 找到场景中的奖杯节点并执行捡起
+	var trophy = main_game.canvas_layer_temp.get_node_or_null("Trophy")
+	if trophy and trophy is Trophy:
+		trophy._do_pickup()
+
 ## Host → 所有人: 游戏失败
 @rpc("authority", "call_local", "reliable")
 func broadcast_game_lose() -> void:

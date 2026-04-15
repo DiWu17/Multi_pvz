@@ -25,8 +25,16 @@ func _physics_process(delta: float) -> void:
 
 #region 播放音乐和音效
 func play_bgm(stream: AudioStream):
+	## 播放前恢复音量（防止被之前的 fade_out 影响）
+	bgm_play.volume_db = 0.0
 	bgm_play.stream = stream
 	bgm_play.play()
+
+## 渐停背景音乐
+func fade_out_bgm(duration: float = 1.5) -> void:
+	var tween = create_tween()
+	tween.tween_property(bgm_play, "volume_db", -40.0, duration)
+	tween.tween_callback(bgm_play.stop)
 
 #region 植物和僵尸有关音效(植物、僵尸、子弹、受击)
 """
