@@ -215,8 +215,12 @@ func create_norm_zombie(
 	## 多人模式：Host 广播僵尸生成给客户端
 	if NetworkManager.is_multiplayer and NetworkManager.is_server():
 		var lane = zombie_init_para.get(Zombie000Base.E_ZInitAttr.Lane, 0)
+		## 收集动画状态（普通僵尸有多种行走/待机/死亡动画）
+		var anim_statuses: Array = []
+		if zombie is Zombie001Norm:
+			anim_statuses = [zombie.idle_status, zombie.walk_status, zombie.death_status]
 		NetworkManager.broadcast_zombie_spawn.rpc(
-			zombie_type, lane, global_pos.x, global_pos.y, zombie.network_id
+			zombie_type, lane, global_pos.x, global_pos.y, zombie.network_id, anim_statuses
 		)
 
 	return zombie

@@ -275,6 +275,7 @@ func _on_remote_ping_marker(peer_id: int, world_pos: Vector2) -> void:
 		_ping_layer = CanvasLayer.new()
 		_ping_layer.name = "PingMarkerLayer"
 		_ping_layer.layer = 100
+		_ping_layer.follow_viewport_enabled = true
 		add_child(_ping_layer)
 
 	var marker_root = Node2D.new()
@@ -285,34 +286,29 @@ func _on_remote_ping_marker(peer_id: int, world_pos: Vector2) -> void:
 
 	var color = NetworkManager.get_player_color(peer_id)
 
-	# 圆点标记 — 描边
-	var marker = Label.new()
-	marker.text = "●"
-	marker.position = Vector2(-16, -40)
-	marker.add_theme_font_size_override("font_size", 48)
-	marker.add_theme_color_override("font_color", color)
-	marker.add_theme_constant_override("outline_size", 6)
-	marker.add_theme_color_override("font_outline_color", Color.BLACK)
-	marker_root.add_child(marker)
+	# 圆点 + 圆环（同心绘制）
+	var marker_draw_node = Node2D.new()
+	marker_draw_node.name = "MarkerDraw"
+	marker_root.add_child(marker_draw_node)
+	var draw_fn := func():
+		# 内圆
+		marker_draw_node.draw_circle(Vector2.ZERO, 10, color)
+		# 黑色描边
+		marker_draw_node.draw_arc(Vector2.ZERO, 10, 0, TAU, 32, Color.BLACK, 2.5, true)
+		# 外圆环
+		marker_draw_node.draw_arc(Vector2.ZERO, 22, 0, TAU, 32, color, 2.5, true)
+	marker_draw_node.draw.connect(draw_fn)
+	marker_draw_node.queue_redraw()
 
-	# 玩家名称 — 稍大一些
+	# 玩家名称
 	var name_label = Label.new()
 	name_label.text = NetworkManager.get_player_name(peer_id)
-	name_label.position = Vector2(-40, -66)
+	name_label.position = Vector2(-40, -30)
 	name_label.add_theme_font_size_override("font_size", 16)
 	name_label.add_theme_color_override("font_color", color)
 	name_label.add_theme_constant_override("outline_size", 3)
 	name_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	marker_root.add_child(name_label)
-
-	# 圆环指示器
-	var ring = Node2D.new()
-	ring.name = "Ring"
-	marker_root.add_child(ring)
-	var ring_draw := func():
-		ring.draw_arc(Vector2.ZERO, 18, 0, TAU, 32, color, 2.5, true)
-	ring.draw.connect(ring_draw)
-	ring.queue_redraw()
 
 	_peer_ping_nodes[peer_id] = marker_root
 

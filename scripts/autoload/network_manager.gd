@@ -816,7 +816,7 @@ func broadcast_plant_sun_spawn(sun_id: int, pos_x: float, pos_y: float, rand_x: 
 #region 僵尸同步
 ## Host → 客户端: 生成僵尸（含网络 ID）
 @rpc("authority", "reliable")
-func broadcast_zombie_spawn(zombie_type: int, lane: int, pos_x: float, pos_y: float, net_id: int = -1) -> void:
+func broadcast_zombie_spawn(zombie_type: int, lane: int, pos_x: float, pos_y: float, net_id: int = -1, anim_statuses: Array = []) -> void:
 	# 仅客户端处理（Host 已经本地生成过了）
 	if multiplayer.is_server():
 		return
@@ -837,6 +837,11 @@ func broadcast_zombie_spawn(zombie_type: int, lane: int, pos_x: float, pos_y: fl
 	if zombie and net_id >= 0:
 		zombie.network_id = net_id
 		main_game.zombie_manager._zombie_by_net_id[net_id] = zombie
+	## 客户端同步动画状态（覆盖本地随机值）
+	if zombie and zombie is Zombie001Norm and anim_statuses.size() == 3:
+		zombie.idle_status = anim_statuses[0]
+		zombie.walk_status = anim_statuses[1]
+		zombie.death_status = anim_statuses[2]
 
 ## Host → 客户端: 僵尸死亡
 @rpc("authority", "reliable")
