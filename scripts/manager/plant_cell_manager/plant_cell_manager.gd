@@ -57,7 +57,6 @@ func update_plant_info_create(_plant_cell:PlantCell, plant_type:CharacterRegistr
 	if not curr_plant_num.has(owner_id):
 		curr_plant_num[owner_id] = {}
 	curr_plant_num[owner_id][plant_type] = curr_plant_num[owner_id].get(plant_type, 0) + 1
-	EventBus.push_event("update_card_purple_sun_cost")
 
 ## 更新植物信息(植物死亡)
 func update_plant_info_free(_plant_cell:PlantCell, plant_type:CharacterRegistry.PlantType, plant:Plant000Base):
@@ -66,6 +65,20 @@ func update_plant_info_free(_plant_cell:PlantCell, plant_type:CharacterRegistry.
 		curr_plant_num[owner_id][plant_type] = curr_plant_num[owner_id].get(plant_type, 0) - 1
 		if curr_plant_num[owner_id][plant_type] < 0:
 			printerr(plant_type, ":该植物类型数量小于0")
+	
+	## 触发费用更新
+	trigger_card_purple_sun_cost_update()
+
+## 手动触发费用更新（在确保owner_peer_id已设置后调用）
+func trigger_card_purple_sun_cost_update():
+	if NetworkManager.is_multiplayer:
+		_sync_card_purple_sun_cost.rpc()
+	else:
+		EventBus.push_event("update_card_purple_sun_cost")
+
+## RPC: 同步费用更新
+@rpc("authority", "call_local", "reliable")
+func _sync_card_purple_sun_cost():
 	EventBus.push_event("update_card_purple_sun_cost")
 
 ## 获取指定玩家的某种植物数量

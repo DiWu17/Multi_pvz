@@ -688,11 +688,26 @@ func _execute_plant(plant_type: int, row: int, col: int, is_imitater: bool, owne
 	var plant_cell: PlantCell = main_game.plant_cell_manager.all_plant_cells[row][col]
 	var plant = plant_cell.create_plant(plant_type as CharacterRegistry.PlantType, is_imitater)
 	if plant is Plant000Base:
+		## 修复植物数据: 如果 owner_id != 1（默认值），需要把记录从1转移到正确的owner_id
+		if owner_id != 1:
+			var plant_cell_manager = main_game.plant_cell_manager
+			if plant_cell_manager.curr_plant_num.has(1):
+				if plant_cell_manager.curr_plant_num[1].has(plant_type):
+					plant_cell_manager.curr_plant_num[1][plant_type] -= 1
+					if plant_cell_manager.curr_plant_num[1][plant_type] < 0:
+						plant_cell_manager.curr_plant_num[1].erase(plant_type)
+			if not plant_cell_manager.curr_plant_num.has(owner_id):
+				plant_cell_manager.curr_plant_num[owner_id] = {}
+			plant_cell_manager.curr_plant_num[owner_id][plant_type] = plant_cell_manager.curr_plant_num[owner_id].get(plant_type, 0) + 1
+		
 		plant.owner_peer_id = owner_id
 		## 同步动画随机速度，防止主客端动画不一致
 		if init_speed > 0:
 			plant.network_init_speed = init_speed
 		GameLogger.log_net("_execute_plant: 种植 type=%d row=%d col=%d owner=%d" % [plant_type, row, col, owner_id])
+		
+		## 设置 owner_peer_id 后更新费用（确保客户端能获取正确的玩家ID）
+		main_game.plant_cell_manager.trigger_card_purple_sun_cost_update()
 	
 	## 发出种植成功信号，通知所有客户端（包括请求者）可以进行冷却
 	plant_success_confirmed.emit(plant_type, row, col, owner_id)
