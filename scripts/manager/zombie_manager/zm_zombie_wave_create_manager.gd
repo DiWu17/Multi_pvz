@@ -24,13 +24,13 @@ const zombie_power = {
 	CharacterRegistry.ZombieType.Z006Paper: 2,		# 读报战力
 	CharacterRegistry.ZombieType.Z007ScreenDoor: 4,	# 铁门战力
 	CharacterRegistry.ZombieType.Z008Football: 7,	# 橄榄球战力
-	CharacterRegistry.ZombieType.Z009Jackson: 5,		# 舞王战力
+	CharacterRegistry.ZombieType.Z009Jackson: 6,		# 舞王战力
 	CharacterRegistry.ZombieType.Z010Dancer: 1,		# 伴舞权重
 
 	CharacterRegistry.ZombieType.Z012Snorkle: 3,		# 潜水
 	CharacterRegistry.ZombieType.Z013Zamboni: 7,		# 冰车
-	CharacterRegistry.ZombieType.Z014Bobsled: 3,		# 滑雪四兄弟
-	CharacterRegistry.ZombieType.Z015Dolphinrider: 3,# 海豚僵尸
+	CharacterRegistry.ZombieType.Z014Bobsled: 5,		# 滑雪四兄弟
+	CharacterRegistry.ZombieType.Z015Dolphinrider: 5,# 海豚僵尸
 
 	CharacterRegistry.ZombieType.Z016Jackbox: 3,		# 小丑
 	CharacterRegistry.ZombieType.Z017Balloon: 2,		# 气球

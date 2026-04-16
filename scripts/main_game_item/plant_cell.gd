@@ -94,8 +94,8 @@ enum E_SpecialStateZombie {
 var ladder:Ladder
 
 ## 植物种植和死亡信号
-signal signal_plant_create(plant_cell:PlantCell, plant_type:CharacterRegistry.PlantType)
-signal signal_plant_free(plant_cell:PlantCell, plant_type:CharacterRegistry.PlantType)
+signal signal_plant_create(plant_cell:PlantCell, plant_type:CharacterRegistry.PlantType, plant:Plant000Base)
+signal signal_plant_free(plant_cell:PlantCell, plant_type:CharacterRegistry.PlantType, plant:Plant000Base)
 
 #region 植物格子初始化
 func _ready() -> void:
@@ -226,7 +226,7 @@ func create_plant(plant_type:CharacterRegistry.PlantType, is_imitater:=false, is
 			plant.down_plant_container.add_child(plant_container_node[CharacterRegistry.PlacePlantInCell.Shell])
 			plant_container_node[CharacterRegistry.PlacePlantInCell.Shell].global_position = plant_postion_node_ori_global_position[CharacterRegistry.PlacePlantInCell.Shell] - plant.plant_up_position
 
-	signal_plant_create.emit(self, plant.plant_type)
+	signal_plant_create.emit(self, plant.plant_type, plant)
 
 	return plant
 
@@ -263,9 +263,9 @@ func one_plant_free(plant:Plant000Base):
 	## 玉米加农炮只有后轮plantcell发射信号更新植物数据
 	if plant.plant_type == CharacterRegistry.PlantType.P048CobCannon:
 		if plant.plant_cell == self:
-			signal_plant_free.emit(self, plant.plant_type)
+			signal_plant_free.emit(self, plant.plant_type, plant)
 	else:
-		signal_plant_free.emit(self, plant.plant_type)
+		signal_plant_free.emit(self, plant.plant_type, plant)
 
 	##如果植物死亡时鼠标在当前植物格子中，等待一帧后重新发射鼠标进入格子信号检测种植
 	if is_mouse_in_ui(button):

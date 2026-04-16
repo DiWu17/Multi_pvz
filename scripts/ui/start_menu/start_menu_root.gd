@@ -103,8 +103,9 @@ func _on_multiplayer_button_pressed() -> void:
 func _on_lobby_closed() -> void:
 	_lobby_instance = null
 	# 游戏由 NetworkManager 的 game_started 启动，
-	# 大厅已 queue_free，这里进入选关界面
+	# 大厅已 queue_free，这里进入选关界面（使用大厅选择的游戏模式）
 	Global.game_para = null
+	var mode = NetworkManager.selected_game_mode
 	get_tree().change_scene_to_file(
-		Global.main_scene_registry.MainScenesMap[MainSceneRegistry.MainScenes.ChooseLevelAdventure]
+		Global.main_scene_registry.MainScenesMap[mode]
 	)

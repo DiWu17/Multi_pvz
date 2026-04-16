@@ -237,9 +237,9 @@ func ready_norm():
 func _physics_process(delta: float) -> void:
 	if not is_network_puppet or is_death:
 		return
-	## 插值追赶目标位置
+	## 插值追赶目标位置（用 length_squared 避免 sqrt）
 	var diff = _net_target_pos - global_position
-	if diff.length() > 1.0:
+	if diff.length_squared() > 1.0:
 		global_position += diff * minf(NET_INTERP_SPEED * delta, 1.0)
 	else:
 		global_position = _net_target_pos

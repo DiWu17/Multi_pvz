@@ -256,6 +256,8 @@ const SFXCarzyDaveMap := {
 
 ## 音效对象池实现
 var sfx_bullet_pool = []
+## 对象池最大容量，超出时回收最早的空闲播放器
+const SFX_POOL_MAX_SIZE := 32
 
 func play_sfx_with_pool(sfx_resource: AudioStream) -> AudioStreamPlayer:
 	if sfx_resource in curr_frame_sfx:
@@ -269,25 +271,22 @@ func play_sfx_with_pool(sfx_resource: AudioStream) -> AudioStreamPlayer:
 			player = p
 			break
 
-	# 如果没有可用播放器，创建新的
+	# 如果没有可用播放器
 	if not player:
-		player = AudioStreamPlayer.new()
-		player.bus = AudioServer.get_bus_name(Bus.SFX)
-		player.finished.connect(_on_sfx_finished.bind(player))
-		sfx_all.add_child(player)
-		sfx_bullet_pool.append(player)
+		# 池已满时复用最早的播放器（强制停止）
+		if sfx_bullet_pool.size() >= SFX_POOL_MAX_SIZE:
+			player = sfx_bullet_pool[0]
+			player.stop()
+		else:
+			player = AudioStreamPlayer.new()
+			player.bus = AudioServer.get_bus_name(Bus.SFX)
+			sfx_all.add_child(player)
+			sfx_bullet_pool.append(player)
 
 	## 配置播放器
 	player.stream = sfx_resource
 	player.play()
 	return player
-
-#TODO: 好像没什么用,后续会删掉
-@warning_ignore("unused_parameter")
-func _on_sfx_finished(player: AudioStreamPlayer):
-	# 播放完成后自动停止，保留在池中
-	#player.stop()
-	pass
 
 ## 播放僵尸受击音效
 func play_be_attack_SFX(type_bullet_zombie_sfx:TypeBeAttackSFX):

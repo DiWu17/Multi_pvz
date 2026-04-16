@@ -115,6 +115,8 @@ func judge_curr_status() -> JacksonStateMachine.E_JacksonStatus:
 
 ## 从特殊状态（舞王入场、攻击）修改跟随跳舞
 func allow_dance():
+	if not is_instance_valid(jackson_manager):
+		return
 	var anim_info = jackson_manager.get_current_animation_info()
 	anim_play(anim_info['name'], anim_info['curr_scale'], anim_info['current_time'], anim_info['speed'], true)
 
@@ -146,4 +148,3 @@ func anim_play(anim_name, curr_scale, start_time, _speed, is_follow:=false):
 			await get_tree().process_frame
 			await get_tree().process_frame
 			move_component._walking_start()
-

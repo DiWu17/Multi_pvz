@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://xqll3x0h8312"]
+
+[ext_resource type="Script" uid="uid://m8b0wv07hbmm" path="res://scripts/ui/main_game_ui/roguelike_buff_card.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://em12la0rqibq" path="res://data/PVZ_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" uid="uid://b48l4yjq0j5mo" path="res://assets/image/ui/ui_main_game_menu/UI_BG/button_BG.png" id="3_btn_bg"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_card"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+texture = ExtResource("3_btn_bg")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 20.0
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_icon"]
+size = Vector2(64, 64)
+
+[node name="RoguelikeBuffCard" type="PanelContainer" unique_id=1784297144]
+custom_minimum_size = Vector2(180, 240)
+offset_left = -89.0
+offset_top = -121.0
+offset_right = 91.0
+offset_bottom = 119.0
+pivot_offset = Vector2(89, 121)
+theme = ExtResource("2_theme")
+theme_override_styles/panel = SubResource("StyleBoxTexture_card")
+script = ExtResource("1_script")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=729451175]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RarityBar" type="ColorRect" parent="VBoxContainer" unique_id=1]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+color = Color(0.6, 0.8, 0.6, 1)
+
+[node name="IconCenter" type="CenterContainer" parent="VBoxContainer" unique_id=1749814521]
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="VBoxContainer/IconCenter" unique_id=2]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+texture = SubResource("PlaceholderTexture2D_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="VBoxContainer" unique_id=3]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+text = "Buff名称"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer" unique_id=130714635]
+layout_mode = 2
+
+[node name="DescLabel" type="Label" parent="VBoxContainer" unique_id=4]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_font_sizes/font_size = 14
+text = "Buff描述文本，说明效果"
+autowrap_mode = 2
+
+[connection signal="gui_input" from="." to="." method="_on_gui_input"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

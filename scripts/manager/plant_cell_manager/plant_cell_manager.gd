@@ -12,8 +12,8 @@ var row_col:Vector2i = Vector2i.ZERO
 ## TombStoneManager(PlantCellManager子节点)初始化
 ## 生成的墓碑列表(一维)
 var tombstone_list :Array[TombStone] = []
-## 当前植物种植的信息[植物种类:植物数量]
-var curr_plant_num:Dictionary[CharacterRegistry.PlantType, int]
+## 当前植物种植的信息[owner_peer_id:[植物种类:植物数量]]（多人游戏中每个玩家单独统计）
+var curr_plant_num:Dictionary = {}
 ## 当前罐子数量
 var curr_pot_num = 0
 
@@ -52,16 +52,27 @@ func _ready() -> void:
 
 #region 植物信息
 ## 更新植物信息(创建新植物)
-func update_plant_info_create(_plant_cell:PlantCell, plant_type:CharacterRegistry.PlantType):
-	curr_plant_num[plant_type] = curr_plant_num.get(plant_type, 0) + 1
+func update_plant_info_create(_plant_cell:PlantCell, plant_type:CharacterRegistry.PlantType, plant:Plant000Base):
+	var owner_id = plant.owner_peer_id
+	if not curr_plant_num.has(owner_id):
+		curr_plant_num[owner_id] = {}
+	curr_plant_num[owner_id][plant_type] = curr_plant_num[owner_id].get(plant_type, 0) + 1
 	EventBus.push_event("update_card_purple_sun_cost")
 
 ## 更新植物信息(植物死亡)
-func update_plant_info_free(_plant_cell:PlantCell, plant_type:CharacterRegistry.PlantType):
-	curr_plant_num[plant_type] -= 1
+func update_plant_info_free(_plant_cell:PlantCell, plant_type:CharacterRegistry.PlantType, plant:Plant000Base):
+	var owner_id = plant.owner_peer_id
+	if curr_plant_num.has(owner_id):
+		curr_plant_num[owner_id][plant_type] = curr_plant_num[owner_id].get(plant_type, 0) - 1
+		if curr_plant_num[owner_id][plant_type] < 0:
+			printerr(plant_type, ":该植物类型数量小于0")
 	EventBus.push_event("update_card_purple_sun_cost")
-	if curr_plant_num[plant_type] < 0:
-		printerr(plant_type, ":该植物类型数量小于0")
+
+## 获取指定玩家的某种植物数量
+func get_player_plant_num(plant_type:CharacterRegistry.PlantType, owner_id:int) -> int:
+	if curr_plant_num.has(owner_id):
+		return curr_plant_num[owner_id].get(plant_type, 0)
+	return 0
 #endregion
 
 func init_manager() -> void:

@@ -45,8 +45,8 @@ func _physics_process(delta: float) -> void:
 
 	movement_component.physics_process_bullet_move(delta)
 
-	## 移动超过最大距离后销毁，部分子弹有限制,大部分子弹超过默认2000后删除
-	if global_position.distance_to(start_pos) > max_distance:
+	## 移动超过最大距离后销毁（用 distance_squared 避免 sqrt）
+	if global_position.distance_squared_to(start_pos) > max_distance * max_distance:
 		queue_free()
 
 ## 切换目标时，尝试攻击是否已经碰撞

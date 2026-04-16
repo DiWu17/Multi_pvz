@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dc1xvxus2co66"]
+[gd_scene format=4 uid="uid://dc1xvxus2co66"]
 
 [ext_resource type="Script" uid="uid://dkbq8o27gtu37" path="res://scripts/ui/start_menu/start_menu_root.gd" id="1_2isde"]
 [ext_resource type="Texture2D" uid="uid://cd1em7514pqef" path="res://assets/image/ui/ui_start_menu/SelectorScreen_BG.jpg" id="1_s2p02"]
@@ -12,22 +12,22 @@
 [ext_resource type="Texture2D" uid="uid://yhsrg3xe463w" path="res://assets/image/ui/ui_start_menu/SelectorScreen_StartAdventure_Highlight.png" id="4_qq5l0"]
 [ext_resource type="Texture2D" uid="uid://cxg4u0r2mhy32" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Cloud5.png" id="5_fbvip"]
 [ext_resource type="Script" uid="uid://parybxg7tb1k" path="res://scripts/ui/PVZ_button_base.gd" id="5_j2mjb"]
-[ext_resource type="BitMap" uid="uid://dait70qma6c1u" path="res://assets/image/ui/ui_start_menu/SelectorScreen_StartAdventure_Button1_Mask.png" id="5_jrmm2"]
 [ext_resource type="Texture2D" uid="uid://dbp3mh6ihyl5g" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Cloud6.png" id="6_qphvj"]
 [ext_resource type="Texture2D" uid="uid://vue1u5my8uq5" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Cloud7.png" id="7_6enlx"]
 [ext_resource type="Texture2D" uid="uid://ddtj1p0m4vc5p" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Survival_button.png" id="7_udhvq"]
 [ext_resource type="Texture2D" uid="uid://bi2gixoipald4" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Survival_highlight.png" id="8_kfgfy"]
-[ext_resource type="BitMap" uid="uid://bfavwrykaa6kh" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Survival_button_Mask.png" id="9_cppkq"]
 [ext_resource type="Texture2D" uid="uid://i4nwttep0g64" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Challenges_button.png" id="10_intoo"]
 [ext_resource type="Texture2D" uid="uid://dw6dwfa4si12v" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Challenges_highlight.png" id="11_kjwot"]
-[ext_resource type="BitMap" uid="uid://bqs3fvtgj7ub2" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Challenges_button_Mask.png" id="12_sb5fe"]
 [ext_resource type="Texture2D" uid="uid://dyq7okcnlnigd" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Vasebreaker_button.png" id="13_f134t"]
 [ext_resource type="Texture2D" uid="uid://kwu0okl012tv" path="res://assets/image/ui/ui_start_menu/SelectorScreen_vasebreaker_highlight.png" id="14_614ej"]
-[ext_resource type="BitMap" uid="uid://g4wl1of4q8sx" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Vasebreaker_button_Mask.png" id="15_k7y68"]
+[ext_resource type="BitMap" uid="uid://w3e6m2uqsb3m" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Vasebreaker_button_Mask.png" id="15_k7y68"]
 [ext_resource type="Texture2D" uid="uid://guonyleqdb0g" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Flower1.png" id="16_oe188"]
+[ext_resource type="BitMap" uid="uid://b5khtlqnlctnq" path="res://assets/image/ui/ui_start_menu/SelectorScreen_StartAdventure_Button1_mask.png" id="16_x7dp7"]
 [ext_resource type="BitMap" uid="uid://6aej6sucjx4a" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Flower1_Mask.png" id="17_bkc8k"]
 [ext_resource type="Texture2D" uid="uid://jxspeykurniq" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Flower2.png" id="18_p37de"]
 [ext_resource type="BitMap" uid="uid://bndwnonimphr5" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Flower2_Mask.png" id="19_0gy64"]
+[ext_resource type="BitMap" uid="uid://d30ldo684bxpj" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Challenges_button_mask.png" id="20_acrjk"]
+[ext_resource type="BitMap" uid="uid://du5dge4r3od1f" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Survival_button_mask.png" id="20_ddcpa"]
 [ext_resource type="Texture2D" uid="uid://csp3ona16nnrp" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Flower3.png" id="20_rdc4m"]
 [ext_resource type="BitMap" uid="uid://w2jtfego7tpg" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Flower3_Mask.png" id="21_we678"]
 [ext_resource type="Texture2D" uid="uid://c507rl01uyqmg" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Options1.png" id="22_fkqsy"]
@@ -39,11 +39,11 @@
 [ext_resource type="Texture2D" uid="uid://ccx3fdicdur3a" path="res://assets/image/ui/ui_start_menu/SelectorScreen_ZenGarden.png" id="28_0sp34"]
 [ext_resource type="Script" uid="uid://dcleglawsa2mw" path="res://scripts/start_menu/start_menu_flower_button.gd" id="28_lvy6c"]
 [ext_resource type="Texture2D" uid="uid://ncavqnta7rdx" path="res://assets/image/ui/ui_start_menu/SelectorScreen_ZenGardenHighlight.png" id="29_jjhxv"]
-[ext_resource type="BitMap" uid="uid://c6dx0o3boywqr" path="res://assets/image/ui/ui_start_menu/SelectorScreen_ZenGarden_Mask.png" id="30_3w04d"]
 [ext_resource type="Texture2D" uid="uid://cl31cxpwg5y84" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Almanac.png" id="31_sxpcx"]
 [ext_resource type="Texture2D" uid="uid://b2fq50reclr1l" path="res://assets/image/ui/ui_start_menu/SelectorScreen_AlmanacHighlight.png" id="32_ortyp"]
 [ext_resource type="BitMap" uid="uid://dmojvwlyh8417" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Almanac_Mask.png" id="33_qniwh"]
 [ext_resource type="Texture2D" uid="uid://dup7h3yp7mvuw" path="res://assets/image/ui/ui_start_menu/SelectorScreen_BG_Left.png" id="37_at8of"]
+[ext_resource type="BitMap" uid="uid://ekbj4qyrkjvf" path="res://assets/image/ui/ui_start_menu/SelectorScreen_ZenGarden_mask.png" id="41_acrjk"]
 [ext_resource type="Texture2D" uid="uid://54rpfashjbpk" path="res://assets/image/garden/plantspeechbubble.png" id="41_l67l0"]
 [ext_resource type="Script" uid="uid://i4n5co3domph" path="res://scripts/start_menu/garden_water_flag.gd" id="42_lvy6c"]
 [ext_resource type="Texture2D" uid="uid://ce2m54cahv50v" path="res://assets/image/garden/waterdrop.png" id="43_sa52e"]
@@ -64,8 +64,7 @@
 [ext_resource type="FontFile" uid="uid://dqb8lum530s2f" path="res://assets/fonts/方正少儿_GBK.ttf" id="54_343qg"]
 [ext_resource type="Texture2D" uid="uid://c7hm6tgjy1fbs" path="res://assets/image/ui/ui_start_menu/SelectorScreen_StoreHighlight.png" id="54_ojqr6"]
 [ext_resource type="Texture2D" uid="uid://b0b3qkcasp6py" path="res://assets/image/ui/ui_start_menu/SelectorScreen_WoodSign2_press.png" id="54_yl4bl"]
-[ext_resource type="BitMap" uid="uid://mu5gublnox4q" path="res://assets/image/ui/ui_start_menu/SelectorScreen_WoodSign2_Mask.png" id="55_31n4o"]
-[ext_resource type="BitMap" uid="uid://cra43htuprgvi" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Store_Mask.png" id="55_ito2j"]
+[ext_resource type="BitMap" uid="uid://ckouk5ppbcdn4" path="res://assets/image/ui/ui_start_menu/SelectorScreen_Store_mask.png" id="55_iixuq"]
 [ext_resource type="Texture2D" uid="uid://bttkqw7l87kyw" path="res://assets/image/ui/ui_start_menu/SelectorScreen_WoodSign3.png" id="56_b7wor"]
 [ext_resource type="PackedScene" uid="uid://cp0kgnsx20pyh" path="res://scenes/ui/dialog.tscn" id="57_ry5e1"]
 [ext_resource type="PackedScene" uid="uid://cngkuh03v6yty" path="res://scenes/ui/dialog_confirm.tscn" id="58_confirm"]
@@ -1301,6 +1300,12 @@ font_color = Color(0, 0, 0, 1)
 font = ExtResource("54_343qg")
 font_color = Color(1, 1, 0.62352943, 1)
 
+[sub_resource type="BitMap" id="BitMap_x7dp7"]
+data = {
+"data": PackedByteArray("//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8f"),
+"size": Vector2i(291, 71)
+}
+
 [sub_resource type="Animation" id="Animation_63h8x"]
 resource_name = "Idle"
 length = 2.0
@@ -1669,7 +1674,7 @@ mouse_default_cursor_shape = 2
 texture_normal = ExtResource("3_jrmm2")
 texture_pressed = ExtResource("4_qq5l0")
 texture_hover = ExtResource("4_qq5l0")
-texture_click_mask = ExtResource("5_jrmm2")
+texture_click_mask = ExtResource("16_x7dp7")
 script = ExtResource("5_j2mjb")
 
 [node name="Button2" type="TextureButton" parent="BG_Right/Menu" unique_id=328292847]
@@ -1686,7 +1691,7 @@ mouse_default_cursor_shape = 2
 texture_normal = ExtResource("7_udhvq")
 texture_pressed = ExtResource("8_kfgfy")
 texture_hover = ExtResource("8_kfgfy")
-texture_click_mask = ExtResource("9_cppkq")
+texture_click_mask = ExtResource("20_acrjk")
 script = ExtResource("5_j2mjb")
 
 [node name="Button3" type="TextureButton" parent="BG_Right/Menu" unique_id=557463343]
@@ -1703,7 +1708,7 @@ mouse_default_cursor_shape = 2
 texture_normal = ExtResource("10_intoo")
 texture_pressed = ExtResource("11_kjwot")
 texture_hover = ExtResource("11_kjwot")
-texture_click_mask = ExtResource("12_sb5fe")
+texture_click_mask = ExtResource("20_ddcpa")
 script = ExtResource("5_j2mjb")
 
 [node name="Button4" type="TextureButton" parent="BG_Right/Menu" unique_id=1000885998]
@@ -1856,7 +1861,7 @@ mouse_default_cursor_shape = 2
 texture_normal = ExtResource("28_0sp34")
 texture_pressed = ExtResource("29_jjhxv")
 texture_hover = ExtResource("29_jjhxv")
-texture_click_mask = ExtResource("30_3w04d")
+texture_click_mask = ExtResource("41_acrjk")
 script = ExtResource("5_j2mjb")
 
 [node name="GardenConditionFlag" type="TextureRect" parent="BG_Right/Item/TextureButton" unique_id=750186919]
@@ -1985,7 +1990,7 @@ mouse_default_cursor_shape = 2
 texture_normal = ExtResource("53_wymjr")
 texture_pressed = ExtResource("54_ojqr6")
 texture_hover = ExtResource("54_ojqr6")
-texture_click_mask = ExtResource("55_ito2j")
+texture_click_mask = ExtResource("55_iixuq")
 ignore_texture_size = true
 script = ExtResource("5_j2mjb")
 
@@ -2154,7 +2159,7 @@ offset_top = 389.0
 offset_right = 488.06622
 offset_bottom = 414.48242
 rotation = 0.30697444
-text = "v 1.2.0"
+text = "联机版1.3.3"
 label_settings = SubResource("LabelSettings_x7dp7")
 
 [node name="WoodSign" type="Control" parent="." unique_id=1519060501]
@@ -2209,7 +2214,7 @@ mouse_default_cursor_shape = 2
 texture_normal = ExtResource("53_ry5e1")
 texture_pressed = ExtResource("54_yl4bl")
 texture_hover = ExtResource("54_yl4bl")
-texture_click_mask = ExtResource("55_31n4o")
+texture_click_mask = SubResource("BitMap_x7dp7")
 script = ExtResource("5_j2mjb")
 
 [node name="MultiplayerButton" type="TextureButton" parent="WoodSign" unique_id=187089200]

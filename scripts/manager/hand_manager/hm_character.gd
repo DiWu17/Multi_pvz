@@ -28,8 +28,18 @@ var characte_static_shadow_colum : Array[Node2D]
 ## 紫卡植物可以的预种植植物,点击卡片时明暗交替
 var curr_all_preplant_purple:Array[Plant000Base]
 
+## 多人模式：当前待确认的种植卡片（等待Host确认后才发出signal_card_use_end）
+var pending_plant_card: Card = null
+## 多人模式：待确认的种植位置
+var pending_plant_row: int = -1
+var pending_plant_col: int = -1
+
 func init_hm_character():
 	self.is_mode_column = hand_manager.game_para.is_mode_column
+	## 多人模式：监听种植成功确认信号
+	if NetworkManager.is_multiplayer:
+		NetworkManager.plant_success_confirmed.connect(_on_plant_success_confirmed)
+		NetworkManager.plant_rejected.connect(_on_plant_rejected)
 
 func character_process() -> void:
 	## CanvasItem方法获取位置
@@ -98,6 +108,10 @@ func _clear_curr_data():
 		end_preplant_purple_light()
 
 	is_shadow_in_cell = false
+	## 清除待确认的多人种植请求
+	pending_plant_card = null
+	pending_plant_row = -1
+	pending_plant_col = -1
 	## 若当前存在卡片,事件总线推清除当前卡片数据,种子雨卡槽接受判断
 	if is_instance_valid(curr_card):
 		EventBus.push_event("hm_character_clear_card", [curr_card])
@@ -180,9 +194,12 @@ func click_cell(plant_cell:PlantCell):
 					plant_cell.row_col.y,
 					curr_card.is_imitater
 				)
+				## 保存待确认的卡片和位置，等待Host返回plant_success_confirmed或_plant_rejected信号
+				pending_plant_card = curr_card
+				pending_plant_row = plant_cell.row_col.x
+				pending_plant_col = plant_cell.row_col.y
 			# 多人模式暂不支持种僵尸卡
-			## 卡片种植完成发射信号
-			curr_card.signal_card_use_end.emit()
+			## 注意：不要在这里立即发出signal_card_use_end，等待来自_execute_plant的确认
 			if is_mode_column:
 				_click_cell_column(plant_cell)
 			return
@@ -289,3 +306,23 @@ func _clear_curr_data_column():
 	characte_static_shadow_colum.clear()
 
 #endregion
+
+## 多人模式：处理种植成功确认信号
+func _on_plant_success_confirmed(plant_type: int, row: int, col: int, owner_id: int) -> void:
+	## 只有当owner_id是自己、且平台类型匹配、且位置匹配、且待确认卡片有效时，才发出signal_card_use_end让卡片进入冷却
+	if (owner_id == multiplayer.get_unique_id() and 
+		is_instance_valid(pending_plant_card) and 
+		pending_plant_card.card_plant_type == plant_type and
+		pending_plant_row == row and
+		pending_plant_col == col):
+		pending_plant_card.signal_card_use_end.emit()
+		pending_plant_card = null
+		pending_plant_row = -1
+		pending_plant_col = -1
+
+## 多人模式：处理种植被拒绝信号
+func _on_plant_rejected(reason: String) -> void:
+	## 清除待确认的卡片和位置，不让它进入冷却
+	pending_plant_card = null
+	pending_plant_row = -1
+	pending_plant_col = -1

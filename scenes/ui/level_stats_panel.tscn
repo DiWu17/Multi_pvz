@@ -1,0 +1,140 @@
+[gd_scene format=3 uid="uid://csfg827pekf65"]
+
+[ext_resource type="Script" uid="uid://cptjooniqqb46" path="res://scripts/ui/main_game_ui/level_stats_panel.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://b3uyrr2kg0xam" path="res://assets/image/Almanac/Almanac_ZombieBack_New.png" id="2_olyme"]
+[ext_resource type="Theme" uid="uid://em12la0rqibq" path="res://data/PVZ_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" uid="uid://b48l4yjq0j5mo" path="res://assets/image/ui/ui_main_game_menu/UI_BG/button_BG.png" id="3_x76jo"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_olyme"]
+texture = ExtResource("3_x76jo")
+texture_margin_left = 16.43187
+texture_margin_top = 16.8532
+texture_margin_right = 20.22384
+texture_margin_bottom = 19.38118
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_x76jo"]
+load_path = "res://.godot/imported/button_BG.png-924cb4af41c306aa8cc34d099dd43616.ctex"
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_1ppgi"]
+texture = SubResource("CompressedTexture2D_x76jo")
+texture_margin_left = 28.439774
+texture_margin_top = 22.119825
+texture_margin_right = 29.282436
+texture_margin_bottom = 22.962484
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_nnnic"]
+load_path = "res://.godot/imported/button_BG.png-924cb4af41c306aa8cc34d099dd43616.ctex"
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_4pwb6"]
+texture = SubResource("CompressedTexture2D_nnnic")
+texture_margin_left = 28.439774
+texture_margin_top = 22.119825
+texture_margin_right = 29.282436
+texture_margin_bottom = 22.962484
+
+[node name="LevelStatsPanel" type="CanvasLayer" unique_id=345440981]
+layer = 55
+script = ExtResource("1_script")
+
+[node name="Root" type="Control" parent="." unique_id=72623941]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BG" type="TextureRect" parent="Root" unique_id=1600711645]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_olyme")
+
+[node name="Title" type="Label" parent="Root" unique_id=419203895]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -176.5
+offset_top = 24.0
+offset_right = 154.5
+offset_bottom = 63.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 28
+text = "☀ 关卡统计"
+horizontal_alignment = 1
+
+[node name="CenterContainer" type="CenterContainer" parent="Root" unique_id=1844645408]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="Root/CenterContainer" unique_id=587352328]
+layout_mode = 2
+theme_override_constants/separation = -94
+
+[node name="StatisticsPanel" type="PanelContainer" parent="Root/CenterContainer/VBoxContainer2" unique_id=960265123]
+layout_mode = 2
+theme = ExtResource("2_theme")
+theme_type_variation = &"PanelDialogBG"
+
+[node name="MarginContainer" type="MarginContainer" parent="Root/CenterContainer/VBoxContainer2/StatisticsPanel" unique_id=1480986186]
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Root/CenterContainer/VBoxContainer2/StatisticsPanel/MarginContainer" unique_id=1333543008]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Root/CenterContainer/VBoxContainer2/StatisticsPanel/MarginContainer/VBoxContainer" unique_id=176111622]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="Root/CenterContainer/VBoxContainer2/StatisticsPanel/MarginContainer/VBoxContainer/Header" unique_id=420559102]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 20
+text = "玩家"
+
+[node name="SunLabel" type="Label" parent="Root/CenterContainer/VBoxContainer2/StatisticsPanel/MarginContainer/VBoxContainer/Header" unique_id=1668670508]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 20
+text = "收集阳光"
+horizontal_alignment = 2
+
+[node name="PlayerRows" type="VBoxContainer" parent="Root/CenterContainer/VBoxContainer2/StatisticsPanel/MarginContainer/VBoxContainer" unique_id=1321151648]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Spacer" type="Control" parent="Root/CenterContainer/VBoxContainer2/StatisticsPanel/MarginContainer/VBoxContainer" unique_id=1793202368]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="BtnCenter" type="CenterContainer" parent="Root/CenterContainer/VBoxContainer2" unique_id=1554816599]
+layout_mode = 2
+
+[node name="ConfirmBtn" type="Button" parent="Root/CenterContainer/VBoxContainer2/BtnCenter" unique_id=1736336432]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 45)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxTexture_olyme")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_1ppgi")
+theme_override_styles/hover = SubResource("StyleBoxTexture_4pwb6")
+text = "继  续"
+
+[connection signal="pressed" from="Root/CenterContainer/VBoxContainer2/BtnCenter/ConfirmBtn" to="." method="_on_confirm"]

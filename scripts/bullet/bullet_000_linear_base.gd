@@ -20,8 +20,8 @@ func _physics_process(delta: float) -> void:
 	## 调用移动组件控制移动
 	movement_component.physics_process_bullet_move(delta)
 
-	## 移动超过最大距离后销毁，部分子弹有限制
-	if global_position.distance_to(start_pos) > max_distance:
+	## 移动超过最大距离后销毁，部分子弹有限制（用 distance_squared 避免 sqrt）
+	if global_position.distance_squared_to(start_pos) > max_distance * max_distance:
 		queue_free()
 
 ## 改变y位置(三线调用)

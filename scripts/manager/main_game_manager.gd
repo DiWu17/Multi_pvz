@@ -176,15 +176,20 @@ func _exit_tree() -> void:
 func _apply_multiplayer_scaling() -> void:
 	if not is_multiplayer or game_para == null:
 		return
+	# 首次缩放时保存原始值，防止重新开始时重复乘算导致数值累积
+	if not game_para.has_meta("_orig_zombie_multy"):
+		game_para.set_meta("_orig_zombie_multy", game_para.zombie_multy)
+		game_para.set_meta("_orig_start_sun", game_para.start_sun)
+		game_para.set_meta("_orig_max_choosed_card_num", game_para.max_choosed_card_num)
 	var zombie_scale = NetworkManager.get_zombie_scale()
 	var start_sun_mult = NetworkManager.get_start_sun_multiplier()
-	# 僵尸数量倍率
-	game_para.zombie_multy *= zombie_scale
-	# 起始阳光
-	game_para.start_sun = int(game_para.start_sun * start_sun_mult)
-	# 卡槽数量随人数减少
+	# 僵尸数量倍率（基于原始值计算）
+	game_para.zombie_multy = game_para.get_meta("_orig_zombie_multy") * zombie_scale
+	# 起始阳光（基于原始值计算，取最近的25倍数）
+	game_para.start_sun = roundi(game_para.get_meta("_orig_start_sun") * start_sun_mult / 25.0) * 25
+	# 卡槽数量随人数减少（基于原始值计算）
 	var max_slots = NetworkManager.get_max_card_slots()
-	game_para.max_choosed_card_num = mini(game_para.max_choosed_card_num, max_slots)
+	game_para.max_choosed_card_num = mini(game_para.get_meta("_orig_max_choosed_card_num"), max_slots)
 	print("多人模式难度缩放: 僵尸倍率=%.2f, 起始阳光=%d, 卡槽=%d, 玩家数=%d" % [zombie_scale, game_para.start_sun, game_para.max_choosed_card_num, multiplayer_player_count])
 
 func _ready() -> void:
@@ -563,6 +568,13 @@ func win_main_game():
 	## 多轮游戏，重置主游戏数据
 	if game_para.game_round != 1:
 		re_main_game()
+
+	## 显示关卡统计面板
+	var stats_scene = preload("res://scenes/ui/level_stats_panel.tscn")
+	var stats_panel = stats_scene.instantiate()
+	add_child(stats_panel)
+	await stats_panel.stats_confirmed
+
 	get_tree().change_scene_to_file(Global.main_scene_registry.MainScenesMap.get(game_para.game_mode, Global.main_scene_registry.MainScenesMap[MainSceneRegistry.MainScenes.StartMenu]))
 
 #endregion

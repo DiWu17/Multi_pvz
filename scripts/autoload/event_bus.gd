@@ -17,6 +17,10 @@ var _event_metadata: Dictionary = {}
 @export var max_history_length: int = 100
 ## 调试模式
 @export var debug_mode: bool = false
+## 元数据清理计数器
+var _metadata_cleanup_counter: int = 0
+## 每 200 次事件推送执行一次全量清理
+const METADATA_CLEANUP_INTERVAL := 200
 
 ## 信号：事件被推送时触发
 signal event_pushed(event_name: String, payload: Array)
@@ -36,6 +40,12 @@ func push_event(event_name: String, payload : Variant = [], immediate: bool = tr
 
 	if enable_history:
 		_record_event(event_name, payload)
+
+	# 定期全量清理失效元数据，防止长时间运行后内存增长
+	_metadata_cleanup_counter += 1
+	if _metadata_cleanup_counter >= METADATA_CLEANUP_INTERVAL:
+		_metadata_cleanup_counter = 0
+		_cleanup_all_dead_metadata()
 
 	event_pushed.emit(event_name, payload)
 
@@ -102,6 +112,10 @@ func push_event(event_name: String, payload : Variant = [], immediate: bool = tr
 				_event_metadata[event_name].erase(obj_id)
 				if _event_metadata[event_name].is_empty():
 					_event_metadata.erase(event_name)
+		else:
+			# 对象已释放，Godot 自动断开了信号，但需清理残留的元数据
+			# 尝试通过遍历清理该事件下所有无效条目
+			_cleanup_dead_metadata(event_name)
 
 	event_handled.emit(event_name, payload)
 
@@ -247,6 +261,31 @@ func _get_all_signals() -> Array[String]:
 ## 为对象和方法生成唯一ID
 func _get_object_id(object: Object, method: StringName) -> String:
 	return str(object.get_instance_id()) + "_" + method
+
+## 清理指定事件下已失效对象的元数据残留
+func _cleanup_dead_metadata(event_name: String) -> void:
+	if not _event_metadata.has(event_name):
+		return
+	# 获取当前存活的连接 obj_id 集合
+	var live_ids: Dictionary = {}
+	for conn in get_signal_connection_list(event_name):
+		var obj = conn["callable"].get_object()
+		if is_instance_valid(obj):
+			live_ids[_get_object_id(obj, conn["callable"].get_method())] = true
+	# 移除所有不在存活集合中的元数据
+	var dead_keys: Array[String] = []
+	for obj_id in _event_metadata[event_name]:
+		if not live_ids.has(obj_id):
+			dead_keys.append(obj_id)
+	for key in dead_keys:
+		_event_metadata[event_name].erase(key)
+	if _event_metadata[event_name].is_empty():
+		_event_metadata.erase(event_name)
+
+## 全量清理所有事件的失效元数据
+func _cleanup_all_dead_metadata() -> void:
+	for event_name in _event_metadata.keys():
+		_cleanup_dead_metadata(event_name)
 
 ## 按优先级排序连接
 func _sort_connections_by_priority(event_name: String, connections: Array) -> Array:

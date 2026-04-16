@@ -6,8 +6,8 @@ class_name ResourceSaveGamePlantCellManager
 ## 若植物格子有数据,则保存行列和数据,若没有数据,则跳过该格子
 @export var all_plant_cells_datas:Array[ResourceSaveGamePlantCell]
 
-## 当前植物种植的信息[植物种类:植物数量],读档时验证是否正确
-@export var curr_plant_num:Dictionary[CharacterRegistry.PlantType, int]
+## 当前植物种植的信息[owner_peer_id:[植物种类:植物数量]],读档时验证是否正确（多人游戏中每个玩家单独统计）
+@export var curr_plant_num:Dictionary = {}
 
 ## 墓碑管理器数据
 @export var tomb_stone_manager_data:Dictionary

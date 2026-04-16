@@ -230,10 +230,15 @@ func _on_detect_character(enemy:Character000Base) -> bool:
 			enemy_can_be_attacked = get_first_be_hit_plant_in_cell(enemy)
 		elif enemy is Zombie000Base:
 			enemy_can_be_attacked = enemy
-		enemy_can_be_attacked.signal_character_death.connect(func():need_judge = true)
+		if not enemy_can_be_attacked.signal_character_death.is_connected(_on_enemy_death_need_judge):
+			enemy_can_be_attacked.signal_character_death.connect(_on_enemy_death_need_judge, CONNECT_ONE_SHOT)
 		return true
 	else:
 		return false
+
+## 检测到的敌人死亡时回调，避免重复连接匿名 lambda
+func _on_enemy_death_need_judge():
+	need_judge = true
 
 ## 获取应该被攻击的植物,在当前植物格子中
 func get_first_be_hit_plant_in_cell(plant:Plant000Base)->Plant000Base:

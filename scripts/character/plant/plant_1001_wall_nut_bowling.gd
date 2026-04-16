@@ -7,6 +7,9 @@ var bullets:Node2D
 ## 初始化正常出战角色
 func ready_norm():
 	super()
+	## 保龄球坚果两端独立在 ready_norm 中死亡，跳过 Host 广播，
+	## 防止客户端在 await 期间被 broadcast_plant_death 提前杀死导致子弹不生成
+	skip_death_broadcast = true
 	bullets = Global.main_game.bullets
 	await get_tree().physics_frame
 	_launch_bowling()

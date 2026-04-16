@@ -31,6 +31,17 @@ extends Control
 @onready var btn_leave: Button = $PanelLobby/MarginContainer/VBoxContainer/HBoxContainer/BtnLeave
 @onready var label_status: Label = $PanelLobby/MarginContainer/VBoxContainer/LabelStatus
 
+## 游戏模式选择器（动态创建，仅 Host 可见）
+var _mode_selector: OptionButton = null
+## 模式映射表 (OptionButton index → MainScenes)
+const GAME_MODE_OPTIONS: Array[Dictionary] = [
+	{"label": "冒险模式", "mode": MainSceneRegistry.MainScenes.ChooseLevelAdventure},
+	{"label": "生存模式", "mode": MainSceneRegistry.MainScenes.ChooseLevelSurvival},
+	{"label": "迷你游戏", "mode": MainSceneRegistry.MainScenes.ChooseLevelMiniGame},
+	{"label": "解密模式", "mode": MainSceneRegistry.MainScenes.ChooseLevelPuzzle},
+	{"label": "自定义关卡", "mode": MainSceneRegistry.MainScenes.ChooseLevelCustom},
+]
+
 signal signal_lobby_closed
 
 func _ready() -> void:
@@ -135,7 +146,40 @@ func _show_lobby() -> void:
 	panel_lobby.visible = true
 	btn_start.visible = NetworkManager.is_server()
 	btn_start.disabled = true
+	_create_mode_selector()
 	_refresh_player_list()
+
+## 创建游戏模式选择器（仅 Host 可操作）
+func _create_mode_selector() -> void:
+	if is_instance_valid(_mode_selector):
+		return
+	var hbox = HBoxContainer.new()
+	hbox.name = "GameModeRow"
+	var mode_label = Label.new()
+	mode_label.text = "游戏模式: "
+	hbox.add_child(mode_label)
+
+	_mode_selector = OptionButton.new()
+	_mode_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for opt in GAME_MODE_OPTIONS:
+		_mode_selector.add_item(opt["label"])
+	_mode_selector.selected = 0
+	_mode_selector.item_selected.connect(_on_mode_selected)
+	# 客户端不能修改模式
+	if not NetworkManager.is_server():
+		_mode_selector.disabled = true
+	hbox.add_child(_mode_selector)
+
+	# 插入到 LabelStatus 前面
+	var lobby_vbox = label_status.get_parent()
+	var status_idx = label_status.get_index()
+	lobby_vbox.add_child(hbox)
+	lobby_vbox.move_child(hbox, status_idx)
+
+## 模式选择变更
+func _on_mode_selected(index: int) -> void:
+	if index >= 0 and index < GAME_MODE_OPTIONS.size():
+		NetworkManager.selected_game_mode = GAME_MODE_OPTIONS[index]["mode"]
 
 ## 刷新玩家列表
 func _refresh_player_list() -> void:

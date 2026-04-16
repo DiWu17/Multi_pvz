@@ -70,6 +70,13 @@ var _sync_frame_counter: int = 0
 const SYNC_FRAME_INTERVAL: int = 3
 #endregion
 
+#region 多人模式：僵尸残留清理
+## Host 端定时清理「HP≤0 但未死亡」的残留僵尸（5s 一次）
+var _zombie_cleanup_timer: Timer
+## 清理间隔（秒）
+const ZOMBIE_CLEANUP_INTERVAL: float = 5.0
+#endregion
+
 func _ready():
 	## 注册事件总线
 	EventBus.subscribe("ice_all_zombie", ice_all_zombie)
@@ -80,6 +87,15 @@ func _ready():
 	## 非刷怪模式最后一波僵尸
 	EventBus.subscribe("end_wave_zombie", func():is_end_wave=true)
 	EventBus.subscribe("test_death_all_zombie", death_all_zombie)
+
+	## 多人模式：Host 端启动僵尸残留清理计时器
+	if NetworkManager.is_multiplayer and NetworkManager.is_server():
+		_zombie_cleanup_timer = Timer.new()
+		_zombie_cleanup_timer.wait_time = ZOMBIE_CLEANUP_INTERVAL
+		_zombie_cleanup_timer.one_shot = false
+		_zombie_cleanup_timer.autostart = true
+		_zombie_cleanup_timer.timeout.connect(_on_zombie_cleanup_timer_timeout)
+		add_child(_zombie_cleanup_timer)
 
 	## 初始化僵尸和行列表
 	for zombie_row_i in zombies_root.get_child_count():
@@ -467,6 +483,25 @@ func blover_blow_away_in_sky_zombie():
 ## 最后一波时每秒检查是否有僵尸离开当前视野
 func _on_check_zombie_end_wave_timer_timeout() -> void:
 	set_zombie_death_over_view()
+
+## 多人模式 Host 端：定时清理 HP≤0 但未触发死亡的残留僵尸
+## 解决雪橇车等僵尸在场地外被打死时客户端出现尸体残留的问题
+func _on_zombie_cleanup_timer_timeout() -> void:
+	for i in range(all_zombies_1d.size() - 1, -1, -1):
+		var zombie: Zombie000Base = all_zombies_1d[i]
+		if not is_instance_valid(zombie):
+			all_zombies_1d.remove_at(i)
+			continue
+		## 跳过已经进入死亡流程的僵尸
+		if zombie.is_death:
+			continue
+		## 检查 HP≤0 但未死亡的僵尸
+		if zombie.hp_component.curr_hp <= 0:
+			print("[ZombieCleanup] 发现残留僵尸 net_id=%d type=%s hp=%d，强制触发死亡" % [
+				zombie.network_id, str(zombie.zombie_type), zombie.hp_component.curr_hp
+			])
+			zombie.character_death()
+			zombie.queue_free()
 
 ## 僵尸换行,更新数据
 func zombie_update_lane(zombie:Zombie000Base, ori_lane:int):

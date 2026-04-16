@@ -99,6 +99,12 @@ func judge_disappear_add_card_bar():
 func update_card_purple_sun_cost():
 	await get_tree().process_frame
 	for card:Card in curr_cards:
-		if card.is_purple_card and Global.main_game.plant_cell_manager.curr_plant_num.has(card.card_plant_type):
-			card.sun_cost = Global.character_registry.get_plant_info(card.card_plant_type, CharacterRegistry.PlantInfoAttribute.SunCost) + 50 * Global.main_game.plant_cell_manager.curr_plant_num[card.card_plant_type]
+		if card.is_purple_card:
+			## 多人模式：按当前玩家单独统计; 单人模式：默认使用 peer_id 1
+			var owner_id = multiplayer.get_unique_id() if NetworkManager.is_multiplayer else 1
+			var plant_count = Global.main_game.plant_cell_manager.get_player_plant_num(card.card_plant_type, owner_id)
+			if plant_count > 0:
+				card.sun_cost = Global.character_registry.get_plant_info(card.card_plant_type, CharacterRegistry.PlantInfoAttribute.SunCost) + 50 * plant_count
+			else:
+				card.sun_cost = Global.character_registry.get_plant_info(card.card_plant_type, CharacterRegistry.PlantInfoAttribute.SunCost)
 			card.judge_sun_enough(sun_value)

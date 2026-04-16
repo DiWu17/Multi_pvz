@@ -25,6 +25,10 @@ signal game_started
 signal player_list_updated
 ## 中继房间创建成功（返回房间码）
 signal relay_room_created(room_code: String)
+## 种植成功信号（在_execute_plant成功后发出）
+signal plant_success_confirmed(plant_type: int, row: int, col: int, owner_id: int)
+## 种植被拒绝信号（阳光不足等原因）
+signal plant_rejected(reason: String)
 #endregion
 
 #region 常量
@@ -73,6 +77,8 @@ enum LobbyState {
 var lobby_state: LobbyState = LobbyState.IDLE
 ## 中继房间码（中继模式下有效）
 var relay_room_code: String = ""
+## 多人模式选择的游戏模式（选关场景）
+var selected_game_mode: MainSceneRegistry.MainScenes = MainSceneRegistry.MainScenes.ChooseLevelAdventure
 #endregion
 
 func _ready() -> void:
@@ -436,12 +442,13 @@ func start_game() -> void:
 	if not multiplayer.is_server():
 		return
 	lobby_state = LobbyState.PLAYING
-	_on_game_start.rpc()
+	_on_game_start.rpc(int(selected_game_mode))
 
-## Host → 所有人: 游戏开始
+## Host → 所有人: 游戏开始（携带游戏模式）
 @rpc("authority", "call_local", "reliable")
-func _on_game_start() -> void:
+func _on_game_start(game_mode_key: int) -> void:
 	lobby_state = LobbyState.PLAYING
+	selected_game_mode = game_mode_key as MainSceneRegistry.MainScenes
 	game_started.emit()
 #endregion
 
@@ -686,12 +693,17 @@ func _execute_plant(plant_type: int, row: int, col: int, is_imitater: bool, owne
 		if init_speed > 0:
 			plant.network_init_speed = init_speed
 		GameLogger.log_net("_execute_plant: 种植 type=%d row=%d col=%d owner=%d" % [plant_type, row, col, owner_id])
+	
+	## 发出种植成功信号，通知所有客户端（包括请求者）可以进行冷却
+	plant_success_confirmed.emit(plant_type, row, col, owner_id)
 
 ## Host → Client: 种植被拒绝
 @rpc("authority", "reliable")
 func _plant_rejected(reason: String) -> void:
 	SoundManager.play_other_SFX("buzzer")
 	print("NetworkManager: 种植被拒绝: %s" % reason)
+	## 发出plant_rejected信号，通知客户端取消冷却
+	plant_rejected.emit(reason)
 #endregion
 
 #region 玉米投手黄油同步
@@ -791,11 +803,11 @@ func request_collect_sun(sun_id: int) -> void:
 
 ## Host → 客户端: 阳光被收集（不含 call_local，Host 已在 try_collect 中处理）
 @rpc("authority", "reliable")
-func broadcast_sun_collected(sun_id: int, new_sun_value: int) -> void:
+func broadcast_sun_collected(sun_id: int, new_sun_value: int, collector_peer_id: int = -1, sun_amount: int = 0) -> void:
 	var main_game = Global.main_game
 	if not is_instance_valid(main_game):
 		return
-	main_game.day_suns_manager.on_sun_collected_network(sun_id)
+	main_game.day_suns_manager.on_sun_collected_network(sun_id, collector_peer_id, sun_amount)
 	if main_game.card_manager.card_slot_battle:
 		main_game.card_manager.card_slot_battle.sun_value = new_sun_value
 
@@ -819,7 +831,7 @@ func broadcast_plant_sun_spawn(sun_id: int, pos_x: float, pos_y: float, rand_x: 
 #region 僵尸同步
 ## Host → 客户端: 生成僵尸（含网络 ID）
 @rpc("authority", "reliable")
-func broadcast_zombie_spawn(zombie_type: int, lane: int, pos_x: float, pos_y: float, net_id: int = -1) -> void:
+func broadcast_zombie_spawn(zombie_type: int, lane: int, pos_x: float, pos_y: float, net_id: int = -1, anim_statuses: Array = []) -> void:
 	# 仅客户端处理（Host 已经本地生成过了）
 	if multiplayer.is_server():
 		return
@@ -836,10 +848,16 @@ func broadcast_zombie_spawn(zombie_type: int, lane: int, pos_x: float, pos_y: fl
 		zombie_init_para,
 		Vector2(pos_x, pos_y)
 	)
-	## 客户端赋值 Host 分配的 network_id
-	if zombie and net_id >= 0:
-		zombie.network_id = net_id
-		main_game.zombie_manager._zombie_by_net_id[net_id] = zombie
+	if zombie:
+		## 客户端赋值 Host 分配的 network_id
+		if net_id >= 0:
+			zombie.network_id = net_id
+			main_game.zombie_manager._zombie_by_net_id[net_id] = zombie
+		## 同步动画状态（普通僵尸随机外观）
+		if anim_statuses.size() == 3 and zombie is Zombie001Norm:
+			zombie.idle_status = anim_statuses[0]
+			zombie.walk_status = anim_statuses[1]
+			zombie.death_status = anim_statuses[2]
 
 ## Host → 客户端: 僵尸死亡
 @rpc("authority", "reliable")

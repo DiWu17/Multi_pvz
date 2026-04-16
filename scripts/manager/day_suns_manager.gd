@@ -21,12 +21,23 @@ class_name DaySunsManagner
 var _next_sun_id_counter: int = 0
 ## 多人模式：活跃阳光 {sun_id: Sun}
 var active_suns: Dictionary = {}
+## 每个玩家收集的阳光统计 {peer_id: int → total_sun: int}
+var sun_collected_per_player: Dictionary = {}
 
 func _ready():
 	production_timer.timeout.connect(_on_production_timer_timeout)
+	EventBus.subscribe("add_sun_value", _on_track_sun_collected)
 
 func init_manager() -> void:
 	pass
+
+## 单人模式：追踪阳光收集量
+func _on_track_sun_collected(value: int) -> void:
+	if NetworkManager.is_multiplayer:
+		return
+	if not sun_collected_per_player.has(1):
+		sun_collected_per_player[1] = 0
+	sun_collected_per_player[1] += value
 
 func start_day_sun():
 	# 如果计时器是暂停状态，取消暂停
@@ -92,7 +103,7 @@ func spawn_sun_from_network(sun_id: int, pos: Vector2, target_y: float) -> void:
 		new_sun.spawn_sun_tween.finished.connect(new_sun.on_sun_tween_finished)
 
 ## 多人模式：Host 验证阳光收集
-func try_collect_sun_network(sun_id: int, _peer_id: int) -> void:
+func try_collect_sun_network(sun_id: int, peer_id: int) -> void:
 	if sun_id in active_suns:
 		var sun = active_suns[sun_id]
 		active_suns.erase(sun_id)
@@ -102,14 +113,18 @@ func try_collect_sun_network(sun_id: int, _peer_id: int) -> void:
 			sun.queue_free()
 		## 使用阳光原始值（不缩放），频率已提高
 		var value = sun.sun_value if is_instance_valid(sun) and sun is Sun else 25
+		## 统计每个玩家收集的阳光
+		if not sun_collected_per_player.has(peer_id):
+			sun_collected_per_player[peer_id] = 0
+		sun_collected_per_player[peer_id] += value
 		## 加阳光并同步
 		var card_slot = Global.main_game.card_manager.card_slot_battle
 		if card_slot:
 			card_slot.sun_value += value
-			NetworkManager.broadcast_sun_collected.rpc(sun_id, card_slot.sun_value)
+			NetworkManager.broadcast_sun_collected.rpc(sun_id, card_slot.sun_value, peer_id, value)
 
 ## 多人模式：阳光被收集的客户端处理
-func on_sun_collected_network(sun_id: int) -> void:
+func on_sun_collected_network(sun_id: int, collector_peer_id: int = -1, sun_amount: int = 0) -> void:
 	if sun_id in active_suns:
 		var sun = active_suns[sun_id]
 		active_suns.erase(sun_id)
@@ -118,6 +133,11 @@ func on_sun_collected_network(sun_id: int) -> void:
 			sun.collected = true
 			sun.queue_free()
 		## 如果 sun.collected 已为 true，说明是本地玩家点击的，动画会自行处理销毁
+	## 统计每个玩家收集的阳光（客户端同步）
+	if collector_peer_id > 0 and sun_amount > 0:
+		if not sun_collected_per_player.has(collector_peer_id):
+			sun_collected_per_player[collector_peer_id] = 0
+		sun_collected_per_player[collector_peer_id] += sun_amount
 
 ## 多人模式：从网络生成植物产生的阳光（客户端调用）
 func spawn_plant_sun_from_network(sun_id: int, pos: Vector2, rand_x: float, sun_val: int = 25) -> void:
