@@ -69,6 +69,11 @@ var marker_2d_sun_target: Marker2D
 
 #endregion
 
+#region 肉鸽背包
+var rogue_backpack_panel: RogueBackpackPanel
+var rogue_backpack_button: BaseButton
+#endregion
+
 #region 锤子进入节点鼠标显示
 ## 鼠标是否一致显示,当有锤子时
 var is_mouse_visibel_on_hammer:bool = false
@@ -212,7 +217,10 @@ func _ready() -> void:
 	coin_bank_label.visible = false
 	## 初始化游戏背景音乐
 	_init_game_BGM()
-
+	## 肉鸽模式：初始化背包按钮
+	if game_para.card_mode == ConstLevelData.E_CardMode.RogueConveyor:
+		_init_rogue_backpack()
+	
 	## 若有存档
 	if is_save_game_data_on_init:
 		load_game_main_game()
@@ -296,6 +304,52 @@ func _init_game_BGM():
 	#print(game_para.game_BGM)
 	var path_bgm_game = ConstLevelData.GameBGMMap[game_para.game_BGM]
 	bgm_main_game = load(path_bgm_game) as AudioStream
+
+
+## 初始化肉鸽背包按钮和面板
+func _init_rogue_backpack():
+	## 创建背包按钮（放在菜单按钮左边）
+	var menu_btn: BaseButton = %MainGameMenuButton
+	rogue_backpack_button = BaseButton.new()
+	rogue_backpack_button.process_mode = Node.PROCESS_MODE_ALWAYS
+	menu_btn.get_parent().add_child(rogue_backpack_button)
+
+	## 按钮定位：菜单按钮左边，同样锚定右上角
+	rogue_backpack_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	rogue_backpack_button.offset_left = menu_btn.offset_left - 110
+	rogue_backpack_button.offset_right = menu_btn.offset_left - 6
+	rogue_backpack_button.offset_top = 0
+	rogue_backpack_button.offset_bottom = 38
+
+	## 按钮背景
+	var btn_panel := Panel.new()
+	btn_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	btn_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var btn_style := StyleBoxFlat.new()
+	btn_style.bg_color = Color(0.18, 0.18, 0.25, 0.9)
+	btn_style.corner_radius_top_left = 4
+	btn_style.corner_radius_top_right = 4
+	btn_style.corner_radius_bottom_left = 4
+	btn_style.corner_radius_bottom_right = 4
+	btn_panel.add_theme_stylebox_override("panel", btn_style)
+	rogue_backpack_button.add_child(btn_panel)
+
+	## 按钮文字
+	var btn_label := Label.new()
+	btn_label.text = "背包"
+	btn_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	btn_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	btn_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	btn_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rogue_backpack_button.add_child(btn_label)
+
+	## 创建背包面板
+	rogue_backpack_panel = preload("res://scenes/ui/rogue_backpack_panel.tscn").instantiate()
+	rogue_backpack_panel.process_mode = Node.PROCESS_MODE_ALWAYS
+	canvas_layer_ui.add_child(rogue_backpack_panel)
+
+	## 连接按钮信号
+	rogue_backpack_button.pressed.connect(func(): rogue_backpack_panel.toggle())
 
 
 ## 不用选择卡片进行的流程
