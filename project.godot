@@ -14,7 +14,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="GodotPVZ-Dream_me"
+config/name="Plant vs Zombie Coop"
 run/main_scene="uid://dc1xvxus2co66"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="uid://dxvlqvahfmjaa"
@@ -32,6 +32,8 @@ TreePauseManager="*res://scripts/autoload/tree_pause_manager.gd"
 NetworkManager="*res://scripts/autoload/network_manager.gd"
 GameLogger="*res://scripts/autoload/logger.gd"
 DebugConsole="*res://scripts/autoload/debug_console.gd"
+RogueState="*res://scripts/autoload/rogue_state.gd"
+RogueBuffManager="*uid://ctoijpb3hit7x"
 
 [debug]
 

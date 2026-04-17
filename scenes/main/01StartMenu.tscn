@@ -1728,6 +1728,14 @@ texture_hover = ExtResource("14_614ej")
 texture_click_mask = ExtResource("15_k7y68")
 script = ExtResource("5_j2mjb")
 
+[node name="Button" type="Button" parent="BG_Right/Menu" unique_id=829315990]
+layout_mode = 0
+offset_left = 108.0
+offset_top = 147.0
+offset_right = 306.0
+offset_bottom = 248.0
+text = "肉鸽模式"
+
 [node name="Flower" type="Control" parent="BG_Right" unique_id=321955551]
 layout_mode = 1
 anchors_preset = 3
@@ -3063,6 +3071,7 @@ offset_bottom = -178.0
 [connection signal="pressed" from="BG_Right/Menu/Button2" to="." method="_on_button_2_pressed"]
 [connection signal="pressed" from="BG_Right/Menu/Button3" to="." method="_on_button_3_pressed"]
 [connection signal="pressed" from="BG_Right/Menu/Button4" to="." method="_on_button_4_pressed"]
+[connection signal="pressed" from="BG_Right/Menu/Button" to="." method="_on_rogue_button_pressed"]
 [connection signal="pressed" from="BG_Right/Option/TextureButton" to="." method="_on_option_button_1_pressed"]
 [connection signal="pressed" from="BG_Right/Option/TextureButton2" to="." method="_on_option_button_2_pressed"]
 [connection signal="pressed" from="BG_Right/Option/TextureButton3" to="." method="_on_option_button_3_pressed"]

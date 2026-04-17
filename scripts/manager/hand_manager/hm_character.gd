@@ -108,10 +108,6 @@ func _clear_curr_data():
 		end_preplant_purple_light()
 
 	is_shadow_in_cell = false
-	## 清除待确认的多人种植请求
-	pending_plant_card = null
-	pending_plant_row = -1
-	pending_plant_col = -1
 	## 若当前存在卡片,事件总线推清除当前卡片数据,种子雨卡槽接受判断
 	if is_instance_valid(curr_card):
 		EventBus.push_event("hm_character_clear_card", [curr_card])
@@ -188,16 +184,16 @@ func click_cell(plant_cell:PlantCell):
 		## 多人模式：发送种植请求给 Host
 		if NetworkManager.is_multiplayer:
 			if curr_card.card_plant_type != 0:
+				## 先保存待确认的卡片和位置（Host端RPC会同步执行，信号在local_request_plant内就会触发）
+				pending_plant_card = curr_card
+				pending_plant_row = plant_cell.row_col.x
+				pending_plant_col = plant_cell.row_col.y
 				NetworkManager.local_request_plant(
 					curr_card.card_plant_type,
 					plant_cell.row_col.x,
 					plant_cell.row_col.y,
 					curr_card.is_imitater
 				)
-				## 保存待确认的卡片和位置，等待Host返回plant_success_confirmed或_plant_rejected信号
-				pending_plant_card = curr_card
-				pending_plant_row = plant_cell.row_col.x
-				pending_plant_col = plant_cell.row_col.y
 			# 多人模式暂不支持种僵尸卡
 			## 注意：不要在这里立即发出signal_card_use_end，等待来自_execute_plant的确认
 			if is_mode_column:
@@ -309,12 +305,10 @@ func _clear_curr_data_column():
 
 ## 多人模式：处理种植成功确认信号
 func _on_plant_success_confirmed(plant_type: int, row: int, col: int, owner_id: int) -> void:
-	## 只有当owner_id是自己、且平台类型匹配、且位置匹配、且待确认卡片有效时，才发出signal_card_use_end让卡片进入冷却
-	if (owner_id == multiplayer.get_unique_id() and 
-		is_instance_valid(pending_plant_card) and 
-		pending_plant_card.card_plant_type == plant_type and
-		pending_plant_row == row and
-		pending_plant_col == col):
+	var my_id = multiplayer.get_unique_id()
+	# Host 端 Godot 通常 id 为0或1，客户端为2、3、4...
+	var is_self = (owner_id == my_id) or (my_id == 1 and owner_id == 0) or (my_id == 0 and owner_id == 1)
+	if is_self and is_instance_valid(pending_plant_card) and pending_plant_card.card_plant_type == plant_type and pending_plant_row == row and pending_plant_col == col:
 		pending_plant_card.signal_card_use_end.emit()
 		pending_plant_card = null
 		pending_plant_row = -1

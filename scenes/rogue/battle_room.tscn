@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://gay22k45s1c5"]
+
+[ext_resource type="Script" uid="uid://dl37djskthevl" path="res://scripts/rogue/battle_room.gd" id="1_script"]
+
+[node name="BattleRoom" type="Control" unique_id=752771218]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")

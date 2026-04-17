@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicData" format=3 uid="uid://vj8fg3oronlf"]
+
+[ext_resource type="Script" uid="uid://3cqr7mom4cuq" path="res://scripts/resources/relic_data.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://41hsr6ud63n1" path="res://assets/image/relics/vajra.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"vajra"
+display_name = "金刚杵"
+description = "植物攻击力+20%"
+icon = ExtResource("2")
+effect_type = 2
+param_float = 0.2

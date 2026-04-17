@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BuffData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/buff_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"auto_collect_sun"
+display_name = "阳光磁铁"
+description = "自动拾取阳光"
+rarity = 1
+effect_type = 6
+param_float = 0.0
+param_int = 0
+tags = PackedStringArray()
+permanent = true
+duration_rounds = -1
+max_stacks = 1

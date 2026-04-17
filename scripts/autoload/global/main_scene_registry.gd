@@ -19,6 +19,8 @@ enum MainScenes{
 	Almanac,
 	Store,
 
+	RogueMap = 300,
+
 	Null = 999,
 }
 @export var MainScenesMap = {
@@ -36,6 +38,8 @@ enum MainScenes{
 	MainScenes.Garden: "res://scenes/main/10Garden.tscn",
 	MainScenes.Almanac: "res://scenes/main/11Almanac.tscn",
 	MainScenes.Store: "res://scenes/main/12Store.tscn",
+
+	MainScenes.RogueMap: "res://scenes/rogue/rogue_map.tscn",
 }
 
 ## 场景僵尸的行类型

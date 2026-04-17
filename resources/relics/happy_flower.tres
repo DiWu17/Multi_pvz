@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RelicData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/relic_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/image/relics/happy_flower.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"happy_flower"
+display_name = "开心小花"
+description = "产出阳光+20%"
+icon = ExtResource("2")
+rarity = 0
+stackable = false
+effect_type = 1
+param_float = 0.2
+param_int = 0
+tags = PackedStringArray()

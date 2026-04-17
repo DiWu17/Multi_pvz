@@ -1,0 +1,270 @@
+[gd_scene format=3 uid="uid://shproom0001"]
+
+[ext_resource type="Script" uid="uid://cua62cc1lg6v" path="res://scripts/rogue/shop_room.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cw46jx8pqc150" path="res://assets/image/store/Store_Bg_New.png" id="2_bg"]
+[ext_resource type="Texture2D" uid="uid://c2n2g18qgsut1" path="res://assets/image/store/Store_Car.png" id="3_car"]
+[ext_resource type="Texture2D" uid="uid://umyqotkyrx6w" path="res://assets/image/store/Store_HatchbackOpen.png" id="4_hatch"]
+[ext_resource type="Texture2D" uid="uid://c4vn5sj6dy5xq" path="res://assets/image/store/Store_Sign.png" id="5_sign"]
+[ext_resource type="Texture2D" uid="uid://d1v7iypigcffs" path="res://assets/image/store/Store_MainMenuButton.png" id="6_btn"]
+[ext_resource type="Texture2D" uid="uid://cdoq1urea0r1y" path="res://assets/image/store/Store_MainMenuButtonDown.png" id="7_btn_down"]
+[ext_resource type="Texture2D" uid="uid://cxm7vdvvw2u8x" path="res://assets/image/store/Store_MainMenuButtonHighlight.png" id="8_btn_hover"]
+[ext_resource type="PackedScene" uid="uid://dsxyx35geqj23" path="res://scenes/crazy_dave/crazy_dave.tscn" id="10_5us8r"]
+[ext_resource type="Theme" uid="uid://em12la0rqibq" path="res://data/PVZ_theme.tres" id="10_theme"]
+[ext_resource type="Script" uid="uid://7qucqjvdq78q" path="res://scripts/resources/crazy_dave_dialog_detail_resource.gd" id="11_reqns"]
+[ext_resource type="Resource" uid="uid://urishti8iy5w" path="res://resources/crazy_dave_resource/dialog_detail/001_Crazy.tres" id="12_csh2t"]
+[ext_resource type="Script" uid="uid://dlfnh7fjqyil6" path="res://scripts/resources/crazy_dave_dialog_resource.gd" id="13_1kmnu"]
+
+[sub_resource type="Resource" id="Resource_8c1ng"]
+script = ExtResource("11_reqns")
+text = "欢迎来到疯狂戴夫的商店"
+metadata/_custom_type_script = "uid://7qucqjvdq78q"
+
+[sub_resource type="Resource" id="Resource_on4af"]
+script = ExtResource("11_reqns")
+text = "吃饭、睡觉、做大梦"
+metadata/_custom_type_script = "uid://7qucqjvdq78q"
+
+[sub_resource type="Resource" id="Resource_45f1l"]
+script = ExtResource("11_reqns")
+text = "戴夫~接客"
+is_crazy = true
+metadata/_custom_type_script = "uid://7qucqjvdq78q"
+
+[sub_resource type="Resource" id="Resource_tuurf"]
+script = ExtResource("13_1kmnu")
+dialog_detail_list = Array[ExtResource("11_reqns")]([SubResource("Resource_8c1ng")])
+dialog_detail_long_time_idle_list = Array[ExtResource("11_reqns")]([ExtResource("12_csh2t"), SubResource("Resource_on4af"), SubResource("Resource_45f1l")])
+is_enter_up = true
+is_long_time_dave = true
+metadata/_custom_type_script = "uid://dlfnh7fjqyil6"
+
+[node name="ShopRoom" type="Control" unique_id=238213020]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("10_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1232526656]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+
+[node name="Car" type="TextureRect" parent="Background" unique_id=222436017]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -604.0
+offset_top = -462.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+texture = ExtResource("3_car")
+
+[node name="HatchbackOpen" type="TextureRect" parent="Background/Car" unique_id=1752555740]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -217.0
+offset_top = -137.0
+offset_right = 189.0
+offset_bottom = 36.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = ExtResource("4_hatch")
+
+[node name="ItemsContainer" type="HBoxContainer" parent="Background/Car" unique_id=881286479]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 55.0
+offset_right = 500.0
+offset_bottom = 250.0
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="StoreSign" type="TextureRect" parent="Background" unique_id=2101881736]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -536.0
+offset_right = -28.0
+offset_bottom = 124.0
+grow_horizontal = 0
+mouse_filter = 2
+texture = ExtResource("5_sign")
+
+[node name="TitleLabel" type="Label" parent="Background/StoreSign" unique_id=1409176617]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -103.0
+offset_top = 2.0
+offset_right = 97.0
+offset_bottom = 42.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.55, 1)
+theme_override_colors/font_outline_color = Color(0.3, 0.15, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 28
+text = "肉  鸽  商  店"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GoldLabel" type="Label" parent="." unique_id=819693092]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 206.0
+offset_top = -51.0
+offset_right = 420.0
+offset_bottom = -20.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 22
+text = "金币: 100"
+
+[node name="ContinueButton" type="TextureButton" parent="." unique_id=98399469]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 124.0
+offset_top = -122.0
+offset_right = 262.0
+offset_bottom = -42.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("6_btn")
+texture_pressed = ExtResource("7_btn_down")
+texture_hover = ExtResource("8_btn_hover")
+
+[node name="Label" type="Label" parent="ContinueButton" unique_id=15679486]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -56.0
+offset_top = -23.0
+offset_right = 36.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.384314, 0.6, 0.921569, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 21
+text = "离开"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ConfirmPanel" type="Control" parent="." unique_id=1440277921]
+visible = false
+z_index = 1000
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Overlay" type="Panel" parent="ConfirmPanel" unique_id=1495165266]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dialog" type="Panel" parent="ConfirmPanel" unique_id=83849770]
+custom_minimum_size = Vector2(345, 200)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -172.0
+offset_top = -100.0
+offset_right = 173.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"PanelDialogBG"
+
+[node name="MarginContainer" type="MarginContainer" parent="ConfirmPanel/Dialog" unique_id=379932174]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 70
+
+[node name="ConfirmLabel" type="Label" parent="ConfirmPanel/Dialog/MarginContainer" unique_id=1599695988]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+text = "是否购买该商品？"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ConfirmPanel/Dialog" unique_id=1741467983]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = -60.0
+offset_right = -32.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="YesButton" type="Button" parent="ConfirmPanel/Dialog/HBoxContainer" unique_id=896999465]
+custom_minimum_size = Vector2(100, 36)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "确认"
+
+[node name="NoButton" type="Button" parent="ConfirmPanel/Dialog/HBoxContainer" unique_id=2052151988]
+custom_minimum_size = Vector2(100, 36)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "取消"
+
+[node name="CrazyDave" parent="." unique_id=370347709 instance=ExtResource("10_5us8r")]
+position = Vector2(44, 0)
+dialog_resource = SubResource("Resource_tuurf")

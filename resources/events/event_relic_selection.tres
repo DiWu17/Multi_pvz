@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="RogueEventData" format=3 uid="uid://v6wfak230t3h"]
+
+[ext_resource type="Script" uid="uid://b00ikvc3cacii" path="res://scripts/resources/rogue_event_data.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://c7bpy864fvb2m" path="res://assets/image/events/battleworn_dummy.png" id="1_6lguv"]
+[ext_resource type="Script" uid="uid://bbnxg8jy3qlgw" path="res://scripts/resources/rogue_event_option.gd" id="2"]
+[ext_resource type="Script" uid="uid://moeco3vc1jqo" path="res://scripts/resources/rogue_effect_entry.gd" id="3"]
+
+[sub_resource type="Resource" id="effect_1"]
+script = ExtResource("3")
+type = 1
+target_resource_path = "res://resources/relics/gremlin_horn.tres"
+
+[sub_resource type="Resource" id="option_1"]
+script = ExtResource("2")
+label = "选择贪婪号角"
+description = "获得遗物: 杀死敌人后获得10点阳光"
+effects = Array[ExtResource("3")]([SubResource("effect_1")])
+
+[sub_resource type="Resource" id="effect_2"]
+script = ExtResource("3")
+type = 1
+target_resource_path = "res://resources/relics/happy_flower.tres"
+
+[sub_resource type="Resource" id="option_2"]
+script = ExtResource("2")
+label = "选择开心小花"
+description = "获得遗物: 产出阳光+20%"
+effects = Array[ExtResource("3")]([SubResource("effect_2")])
+
+[sub_resource type="Resource" id="effect_3"]
+script = ExtResource("3")
+type = 1
+target_resource_path = "res://resources/relics/vajra.tres"
+
+[sub_resource type="Resource" id="option_3"]
+script = ExtResource("2")
+label = "选择金刚杵"
+description = "获得遗物: 植物攻击力+10%"
+effects = Array[ExtResource("3")]([SubResource("effect_3")])
+
+[resource]
+script = ExtResource("1")
+id = &"relic_selection"
+title = "神秘的遗迹"
+description = "你在探索中发现了一处古老的遗迹，里面散落着三件神秘的宝物，但你只能带走其中一件..."
+background_image = ExtResource("1_6lguv")
+options = Array[ExtResource("2")]([SubResource("option_1"), SubResource("option_2"), SubResource("option_3")])

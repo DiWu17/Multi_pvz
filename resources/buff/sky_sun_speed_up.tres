@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BuffData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/buff_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"sky_sun_speed_up"
+display_name = "阳光加速"
+description = "自然阳光产出速率+5%"
+rarity = 0
+effect_type = 5
+param_float = 0.05
+param_int = 0
+tags = PackedStringArray()
+permanent = true
+duration_rounds = -1
+max_stacks = -1

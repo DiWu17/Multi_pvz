@@ -77,7 +77,7 @@ func trigger_card_purple_sun_cost_update():
 		EventBus.push_event("update_card_purple_sun_cost")
 
 ## RPC: 同步费用更新
-@rpc("authority", "call_local", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func _sync_card_purple_sun_cost():
 	EventBus.push_event("update_card_purple_sun_cost")
 

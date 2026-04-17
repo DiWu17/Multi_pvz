@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://roguemap001"]
+
+[ext_resource type="Script" uid="uid://dkt0hhvdwqta4" path="res://scripts/rogue/rogue_map.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://x086k1mt7jx5" path="res://assets/image/map/map_bgs/map_top_overgrowth.png" id="2_bg_top"]
+[ext_resource type="Texture2D" uid="uid://c5huu62y5hqkq" path="res://assets/image/map/map_bgs/map_middle_overgrowth.png" id="3_bg_mid"]
+[ext_resource type="Texture2D" uid="uid://cq5wjyjkbn6af" path="res://assets/image/map/map_bgs/map_bottom_overgrowth.png" id="4_bg_bot"]
+[ext_resource type="Script" uid="uid://vss2wgm2cxv8" path="res://scripts/rogue/map_lines.gd" id="5_lines"]
+
+[node name="RogueMap" type="Control" unique_id=1924929403]
+clip_contents = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="MapContent" type="Control" parent="." unique_id=1084926568]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BgTop" type="TextureRect" parent="MapContent" unique_id=2121214125]
+layout_mode = 0
+offset_right = 2036.0
+offset_bottom = 1440.0
+scale = Vector2(0.523, 0.523)
+mouse_filter = 0
+texture = ExtResource("2_bg_top")
+stretch_mode = 5
+
+[node name="BgMiddle" type="TextureRect" parent="MapContent" unique_id=1822508420]
+layout_mode = 0
+scale = Vector2(0.523, 0.523)
+texture = ExtResource("3_bg_mid")
+stretch_mode = 5
+
+[node name="BgBottom" type="TextureRect" parent="MapContent" unique_id=1500290619]
+layout_mode = 0
+scale = Vector2(0.523, 0.523)
+texture = ExtResource("4_bg_bot")
+stretch_mode = 5
+
+[node name="Lines" type="Node2D" parent="MapContent" unique_id=85344663]
+script = ExtResource("5_lines")
+
+[node name="Nodes" type="Control" parent="MapContent" unique_id=345844249]
+anchors_preset = 0

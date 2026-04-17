@@ -63,6 +63,10 @@ func card_init_conveyor_belt():
 	_cool_mask.value = 0
 	sun_cost = 0
 
+## 肉鸽传送带初始化：无冷却但保留阳光消耗
+func card_init_rogue_conveyor():
+	_cool_mask.value = 0
+
 
 ## 卡片冷卻
 func _process(delta: float) -> void:

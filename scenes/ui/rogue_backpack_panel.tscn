@@ -1,0 +1,117 @@
+[gd_scene format=3 uid="uid://dykifi3ilrxbt"]
+
+[ext_resource type="Script" uid="uid://vgkcwrxx1qag" path="res://scripts/ui/main_game_ui/rogue_backpack_panel.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.08, 0.08, 0.12, 0.92)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="RogueBackpackPanel" type="PanelContainer" unique_id=1490922117]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -180.0
+offset_right = 280.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+script = ExtResource("1_script")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1286254821]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1594538758]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=609983404]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/Header" unique_id=4409670]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "背包"
+horizontal_alignment = 1
+
+[node name="CloseButton" type="Button" parent="MarginContainer/VBoxContainer/Header" unique_id=890307240]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "X"
+
+[node name="HSeparator1" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=1153404467]
+layout_mode = 2
+
+[node name="BuffSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=824666637]
+layout_mode = 2
+
+[node name="SectionLabel" type="Label" parent="MarginContainer/VBoxContainer/BuffSection" unique_id=1495002598]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 1, 0.5, 1)
+theme_override_font_sizes/font_size = 13
+text = "Buff"
+
+[node name="BuffScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer/BuffSection" unique_id=30973586]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="BuffContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/BuffSection/BuffScrollContainer" unique_id=222835479]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=336454948]
+layout_mode = 2
+
+[node name="RelicSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1069652616]
+layout_mode = 2
+
+[node name="SectionLabel" type="Label" parent="MarginContainer/VBoxContainer/RelicSection" unique_id=985867780]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.3, 1)
+theme_override_font_sizes/font_size = 13
+text = "遗物"
+
+[node name="RelicScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer/RelicSection" unique_id=1821247131]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="RelicContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/RelicSection/RelicScrollContainer" unique_id=225220944]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator3" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=887208299]
+layout_mode = 2
+
+[node name="DeckSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1298571808]
+layout_mode = 2
+
+[node name="SectionLabel" type="Label" parent="MarginContainer/VBoxContainer/DeckSection" unique_id=590071669]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "植物卡组"
+
+[node name="DeckScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer/DeckSection" unique_id=892699805]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="DeckContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/DeckSection/DeckScrollContainer" unique_id=958383725]
+layout_mode = 2
+size_flags_horizontal = 3

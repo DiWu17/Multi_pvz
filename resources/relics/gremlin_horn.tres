@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RelicData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/relic_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/image/relics/gremlin_horn.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"gremlin_horn"
+display_name = "贪婪号角"
+description = "杀死敌人后获得10点阳光"
+icon = ExtResource("2")
+rarity = 1
+stackable = false
+effect_type = 3
+param_float = 0.0
+param_int = 10
+tags = PackedStringArray()

@@ -109,3 +109,8 @@ func _on_lobby_closed() -> void:
 	get_tree().change_scene_to_file(
 		Global.main_scene_registry.MainScenesMap[mode]
 	)
+
+## 肉鸽模式
+func _on_rogue_button_pressed() -> void:
+	RogueState.start_run()
+	get_tree().change_scene_to_file(Global.main_scene_registry.MainScenesMap[MainSceneRegistry.MainScenes.RogueMap])

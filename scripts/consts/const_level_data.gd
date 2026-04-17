@@ -62,6 +62,7 @@ enum E_CardMode {
 	Norm,
 	ConveyorBelt,
 	Coin, ## 金币卡槽(雪人du狗小游戏)
+	RogueConveyor, ## 肉鸽传送带
 }
 #endregion
 

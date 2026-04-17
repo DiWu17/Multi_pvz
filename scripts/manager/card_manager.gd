@@ -18,6 +18,9 @@ var card_slot_conveyor_belt: CardSlotConveyorBelt
 var card_slot_coin: CardSlotCoin
 var card_slot_battle_coin: CardSlotBattleCoin
 
+## 肉鸽传送带卡槽
+var card_slot_rogue_conveyor: CardSlotRogueConveyor
+
 var card_mode:ConstLevelData.E_CardMode
 
 ## 是否有种子雨
@@ -81,6 +84,12 @@ func init_manager() -> void:
 			card_slot_battle_coin = card_slot_coin.card_slot_battle_coin
 			card_slot_root.curr_cards = card_slot_battle_coin.curr_cards
 
+		ConstLevelData.E_CardMode.RogueConveyor:
+			card_slot_rogue_conveyor = load("res://scenes/card_slot/card_slot_rogue_conveyor.tscn").instantiate()
+			card_slot_root.add_child(card_slot_rogue_conveyor)
+			card_slot_rogue_conveyor.init_card_slot_rogue_conveyor(game_para)
+			card_slot_root.curr_cards = card_slot_rogue_conveyor.curr_cards
+
 ## 开始下一轮游戏更新卡片管理器
 func start_next_game_card_manager_update():
 	card_slot_root.ui_shovel.visible = false
@@ -98,7 +107,8 @@ func start_next_game_card_manager_update():
 		ConstLevelData.E_CardMode.Coin:
 			pass
 
-
+		ConstLevelData.E_CardMode.RogueConveyor:
+			pass
 ## 卡槽出现(选卡)
 func card_slot_appear_choose():
 	is_norm_appeared = true
@@ -140,6 +150,10 @@ func card_slot_update_main_game():
 			if Global.main_game.is_test:
 				for card in card_slot_battle_coin.curr_cards:
 					card.card_change_cool_time(0)
+		ConstLevelData.E_CardMode.RogueConveyor:
+			await card_slot_rogue_conveyor.move_card_slot_conveyor_belt(true)
+			card_slot_rogue_conveyor.reparent(card_slot_container)
+			card_slot_rogue_conveyor.start_conveyor_belt()
 	if is_shovel:
 		card_slot_root.ui_shovel.visible = true
 

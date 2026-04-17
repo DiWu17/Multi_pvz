@@ -713,7 +713,7 @@ func _execute_plant(plant_type: int, row: int, col: int, is_imitater: bool, owne
 	plant_success_confirmed.emit(plant_type, row, col, owner_id)
 
 ## Host → Client: 种植被拒绝
-@rpc("authority", "reliable")
+@rpc("authority", "call_local", "reliable")
 func _plant_rejected(reason: String) -> void:
 	SoundManager.play_other_SFX("buzzer")
 	print("NetworkManager: 种植被拒绝: %s" % reason)
