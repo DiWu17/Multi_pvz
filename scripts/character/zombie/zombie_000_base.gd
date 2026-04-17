@@ -406,6 +406,20 @@ func change_is_swimming(value:bool):
 	shadow.visible = not value
 
 #region 僵尸受伤、死亡、
+
+## 应用遗物/Buff攻击倍率
+func _apply_attack_multiplier(base_value: int) -> int:
+	if RogueState.is_run_active:
+		var final_value := int(base_value * RogueBuffManager.get_attack_multiplier())
+		if final_value != base_value:
+			print("[攻击倍率] %s 受到伤害: %d -> %d (倍率 x%.2f)" % [name, base_value, final_value, RogueBuffManager.get_attack_multiplier()])
+		return final_value
+	return base_value
+
+## 被子弹攻击 (重写基类，应用攻击倍率)
+func be_attacked_bullet(attack_value:int, bullet_mode:BulletRegistry.AttackMode=BulletRegistry.AttackMode.Norm, is_drop:bool=true, trigger_be_attack_SFX:=true):
+	super(_apply_attack_multiplier(attack_value), bullet_mode, is_drop, trigger_be_attack_SFX)
+
 ## 角色死亡
 func character_death():
 	super()
@@ -501,7 +515,7 @@ func be_grap_in_pool():
 ## is_cherry_bomb:bool = false ：是否灰烬炸弹(非土豆雷)
 func be_bomb(attack_value:int, is_cherry_bomb:bool = false):
 	is_can_death_language = false
-	hp_component.Hp_loss(attack_value,BulletRegistry.AttackMode.Penetration, false, false)
+	hp_component.Hp_loss(_apply_attack_multiplier(attack_value),BulletRegistry.AttackMode.Penetration, false, false)
 	## 如果角色死亡
 	if is_death:
 		## 在在灰烬动画条件下
@@ -514,7 +528,7 @@ func be_bomb(attack_value:int, is_cherry_bomb:bool = false):
 ## 被大嘴花吃
 func be_chomper_eat(attack_value:int):
 	is_can_death_language = false
-	hp_component.Hp_loss(attack_value,BulletRegistry.AttackMode.Penetration, false, false)
+	hp_component.Hp_loss(_apply_attack_multiplier(attack_value),BulletRegistry.AttackMode.Penetration, false, false)
 	if is_death:
 		queue_free()
 	#await get_tree().process_frame
@@ -523,7 +537,7 @@ func be_chomper_eat(attack_value:int):
 ## 被倭瓜压
 func be_squash(attack_value:int=1800):
 	is_can_death_language = false
-	hp_component.Hp_loss(attack_value,BulletRegistry.AttackMode.Penetration, false, false)
+	hp_component.Hp_loss(_apply_attack_multiplier(attack_value),BulletRegistry.AttackMode.Penetration, false, false)
 	if is_death:
 		queue_free()
 	#await get_tree().process_frame
