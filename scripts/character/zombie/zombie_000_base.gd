@@ -425,6 +425,8 @@ func character_death():
 	super()
 	hurt_box_component.disable_component(ComponentNormBase.E_IsEnableFactor.Death)
 	swim_box_component._on_owner_is_death()
+	## 通知 Buff 系统: 僵尸被击杀 (用于 SUN_ON_KILL 等效果)
+	EventBus.push_event("zombie_killed")
 	#attack_component.queue_free()
 
 ## 僵尸死亡后逐渐透明，最后删除节点

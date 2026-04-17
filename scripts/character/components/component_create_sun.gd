@@ -108,7 +108,7 @@ func _spawn_sun():
 	for i in range(num_create_sun):
 		var new_sun:Sun = SceneRegistry.SUN.instantiate()
 		var spawn_pos = Global.main_game.suns.to_local(marker_2d_create_sun.global_position)
-		new_sun.init_sun(sun_value, spawn_pos)
+		new_sun.init_sun(_get_effective_sun_value(), spawn_pos)
 		Global.main_game.suns.add_child(new_sun)
 
 		# 控制阳光下落
@@ -165,3 +165,9 @@ func _on_create_sun_timer_timeout() -> void:
 ## 改变阳光生产价值
 func change_sun_value(new_sun_value:int):
 	self.sun_value = new_sun_value
+
+## 获取经过 Buff/遗物 加成后的实际阳光值
+func _get_effective_sun_value() -> int:
+	if RogueState.is_run_active:
+		return int(sun_value * RogueBuffManager.get_sun_production_multiplier())
+	return sun_value

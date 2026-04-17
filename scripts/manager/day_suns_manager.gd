@@ -169,4 +169,6 @@ func change_production_interval():
 
 	## 多人模式：按频率倍率缩短间隔
 	var freq_scale = NetworkManager.get_sun_freq_scale()
-	production_timer.start(production_interval / 100 * freq_scale)
+	## Buff/遗物: 自然阳光产出速率加成
+	var buff_scale := RogueBuffManager.get_sky_sun_rate_multiplier() if RogueState.is_run_active else 1.0
+	production_timer.start(production_interval / 100 * freq_scale * buff_scale)

@@ -13,8 +13,23 @@ signal room_completed()
 @onready var choice_container: Node = $ChoiceContainer
 @onready var result_label: RichTextLabel = $ResultLabel
 
-## 事件资源扫描目录
-const EVENTS_DIR := "res://resources/events/"
+## 事件资源路径列表（打包后 DirAccess 无法枚举 res://，需显式列出）
+const EVENT_PATHS: Array[String] = [
+	"res://resources/events/event_buff_selection.tres",
+	"res://resources/events/event_relic_selection.tres",
+]
+
+const RELIC_PATHS: Array[String] = [
+	"res://resources/relics/vajra.tres",
+	"res://resources/relics/gremlin_horn.tres",
+	"res://resources/relics/happy_flower.tres",
+]
+
+const BUFF_PATHS: Array[String] = [
+	"res://resources/buff/starting_sun_bonus.tres",
+	"res://resources/buff/auto_collect_sun.tres",
+	"res://resources/buff/sky_sun_speed_up.tres",
+]
 
 ## 当前事件
 var _event: RogueEventData
@@ -42,19 +57,10 @@ func _ready() -> void:
 
 func _load_event_pool() -> void:
 	_event_pool.clear()
-	var dir := DirAccess.open(EVENTS_DIR)
-	if dir == null:
-		push_warning("[EventRoom] 无法打开事件目录: %s" % EVENTS_DIR)
-		return
-	dir.list_dir_begin()
-	var file_name := dir.get_next()
-	while file_name != "":
-		if not dir.current_is_dir() and file_name.ends_with(".tres"):
-			var res := load(EVENTS_DIR + file_name)
-			if res is RogueEventData:
-				_event_pool.append(res)
-		file_name = dir.get_next()
-	dir.list_dir_end()
+	for path in EVENT_PATHS:
+		var res := load(path)
+		if res is RogueEventData:
+			_event_pool.append(res)
 
 # ══════════════════════════════════════════
 #  事件抽取 — 加权随机 + 条件过滤
@@ -274,20 +280,13 @@ func _execute_effect(effect: Resource) -> String:
 #  工具方法
 # ══════════════════════════════════════════
 
-## 扫描目录下所有 .tres 文件路径
+## 根据目录路径返回对应的资源路径列表
 func _scan_resources(dir_path: String) -> Array[String]:
-	var paths: Array[String] = []
-	var dir := DirAccess.open(dir_path)
-	if dir == null:
-		return paths
-	dir.list_dir_begin()
-	var file_name := dir.get_next()
-	while file_name != "":
-		if not dir.current_is_dir() and file_name.ends_with(".tres"):
-			paths.append(dir_path + file_name)
-		file_name = dir.get_next()
-	dir.list_dir_end()
-	return paths
+	if dir_path.begins_with("res://resources/relics"):
+		return RELIC_PATHS.duplicate()
+	elif dir_path.begins_with("res://resources/buff"):
+		return BUFF_PATHS.duplicate()
+	return []
 
 ## 从字符串解析 PlantType 枚举
 func _parse_plant_type(type_name: String) -> Variant:

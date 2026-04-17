@@ -137,8 +137,9 @@ func _attack_enemy(enemy:Character000Base):
 
 ## 对僵尸敌人造成伤害,直线类子弹重写
 func _attack_zombie(zombie:Zombie000Base):
-	## 攻击敌人
-	zombie.be_attacked_bullet(attack_value, bullet_mode, true, trigger_be_attack_sfx)
+	## 攻击敌人 (应用 Buff/遗物 攻击倍率)
+	var effective_attack := int(attack_value * RogueBuffManager.get_attack_multiplier()) if RogueState.is_run_active else attack_value
+	zombie.be_attacked_bullet(effective_attack, bullet_mode, true, trigger_be_attack_sfx)
 
 
 ## 对植物敌人造成伤害
