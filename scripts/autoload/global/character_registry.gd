@@ -18,41 +18,41 @@ enum PlantInfoAttribute{
 ## 植物类型
 enum PlantType {
 	Null = 0,
-	P001PeaShooterSingle = 1,
-	P002SunFlower,
-	P003CherryBomb,
-	P004WallNut,
-	P005PotatoMine,
-	P006SnowPea,
-	P007Chomper,
-	P008PeaShooterDouble,
+	P001PeaShooterSingle = 1,			# 豌豆射手（单发）
+	P002SunFlower,						# 向日葵
+	P003CherryBomb,						# 樱桃炸弹
+	P004WallNut,						# 坚果墙
+	P005PotatoMine, 					# 土豆地雷
+	P006SnowPea, 						# 冰豌豆
+	P007Chomper,						# 食人花
+	P008PeaShooterDouble, 				# 双发豌豆射手
 
-	P009PuffShroom,
-	P010SunShroom,
-	P011FumeShroom,
-	P012GraveBuster,
-	P013HypnoShroom,
-	P014ScaredyShroom,
-	P015IceShroom,
-	P016DoomShroom,
+	P009PuffShroom, 					# 小喷菇
+	P010SunShroom, 						# 阳光菇
+	P011FumeShroom,						# 大喷菇
+	P012GraveBuster,					# 坟墓破坏者
+	P013HypnoShroom,					# 魅惑菇
+	P014ScaredyShroom,					# 胆小菇
+	P015IceShroom,						# 寒冰菇
+	P016DoomShroom,						# 毁灭菇
 
-	P017LilyPad,
-	P018Squash,
-	P019ThreePeater,
-	P020TangleKelp,
-	P021Jalapeno,
-	P022Caltrop,
-	P023TorchWood,
-	P024TallNut,
+	P017LilyPad, 						# 睡莲
+	P018Squash,							# 南瓜
+	P019ThreePeater,					# 三发射手
+	P020TangleKelp,						# 藤蔓海藻
+	P021Jalapeno,						# 墨西哥辣椒
+	P022Caltrop,						# 钉刺
+	P023TorchWood, 						# 火炬树桩
+	P024TallNut, 						# 高坚果
 
-	P025SeaShroom,
-	P026Plantern,
-	P027Cactus,
-	P028Blover,
-	P029SplitPea,
-	P030StarFruit,
-	P031Pumpkin,
-	P032MagnetShroom,
+	P025SeaShroom, 						# 海蘑菇
+	P026Plantern, 						# 灯笼草
+	P027Cactus, 						# 仙人掌
+	P028Blover, 						# 爆炸蘑菇
+	P029SplitPea, 						# 分裂豌豆
+	P030StarFruit, 						# 星星果
+	P031Pumpkin, 						# 南瓜
+	P032MagnetShroom, 					# 磁力蘑菇
 
 	P033CabbagePult,
 	P034FlowerPot,

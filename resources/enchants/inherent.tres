@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BuffData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/buff_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"enchant_inherent"
+display_name = "固有"
+description = "该卡牌必定第一个出现在传送带上"
+rarity = 0
+enchant_type = 2
+param_float = 0.0
+param_int = 0
+tags = PackedStringArray()

@@ -9,7 +9,7 @@ var map: RogueMap = null
 const DASH_LENGTH: float = 8.0        ## 每段虚线长度
 const GAP_LENGTH: float = 5.0         ## 虚线间隔长度
 const LINE_WIDTH: float = 2.0         ## 线宽
-const LINE_COLOR: Color = Color(0.6, 0.55, 0.45, 0.8)  ## 线条颜色
+const LINE_COLOR: Color = Color(0.296, 0.264, 0.202, 1.0)  ## 线条颜色
 const HIGHLIGHT_COLOR: Color = Color(1.0, 0.85, 0.4, 0.9)  ## 高亮颜色（已走过的路径）
 
 func _draw() -> void:

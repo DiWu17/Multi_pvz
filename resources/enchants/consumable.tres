@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BuffData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/buff_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"enchant_consumable"
+display_name = "消耗"
+description = "该植物一旦放置后，将不会出现在本局的后续卡组循环中"
+rarity = 0
+enchant_type = 3
+param_float = 0.0
+param_int = 0
+tags = PackedStringArray()

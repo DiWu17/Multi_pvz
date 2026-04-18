@@ -5,6 +5,9 @@ class_name RogueBackpackPanel
 按下背包按钮切换显示/隐藏
 """
 
+const ITEM_CARD_SCENE: PackedScene = preload("res://scenes/ui/rogue_backpack_item.tscn")
+const ENCHANT_CARD_ITEM_SCENE: PackedScene = preload("res://scenes/rogue/enchant_card_item.tscn")
+
 @onready var buff_container: HBoxContainer = $MarginContainer/VBoxContainer/BuffSection/BuffScrollContainer/BuffContainer
 @onready var relic_container: HBoxContainer = $MarginContainer/VBoxContainer/RelicSection/RelicScrollContainer/RelicContainer
 @onready var deck_container: HBoxContainer = $MarginContainer/VBoxContainer/DeckSection/DeckScrollContainer/DeckContainer
@@ -70,62 +73,58 @@ func _refresh_deck() -> void:
 	for child in deck_container.get_children():
 		child.queue_free()
 
-	if RogueState.deck.is_empty():
+	var instances := RogueState.get_all_card_instances()
+	if instances.is_empty():
 		var lbl := Label.new()
 		lbl.text = "卡组为空"
 		lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 		deck_container.add_child(lbl)
 		return
 
-	for plant_type in RogueState.deck:
-		var count: int = RogueState.deck[plant_type]
-		var plant_name: String = Global.character_registry.get_plant_info(
-			plant_type, CharacterRegistry.PlantInfoAttribute.PlantName
-		)
-		var item := _create_item_card(plant_name, "x%d" % count)
-		deck_container.add_child(item)
+	for inst in instances:
+		var plant_type = inst["plant_type"]
+		var enchants: Array = inst["enchants"]
+		var uid: int = inst["uid"]
+
+		var card_panel: PanelContainer = ENCHANT_CARD_ITEM_SCENE.instantiate()
+		var card_slot: CenterContainer = card_panel.get_node("%CardSlot")
+		var enchant_label: Label = card_panel.get_node("%EnchantLabel")
+		var uid_label: Label = card_panel.get_node("%UidLabel")
+
+		## 从 AllCards 获取卡牌模板并复制用于展示
+		if AllCards.all_plant_card_prefabs.has(plant_type):
+			var card_template: Card = AllCards.all_plant_card_prefabs[plant_type]
+			var card_display = card_template.duplicate()
+			card_display.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			card_display.set_process(false)
+			card_display.set_process_input(false)
+			card_slot.add_child(card_display)
+
+		## 显示附魔标签
+		if not enchants.is_empty():
+			var enchant_names := []
+			for e in enchants:
+				enchant_names.append(e.display_name)
+			enchant_label.text = ", ".join(enchant_names)
+			enchant_label.visible = true
+
+		uid_label.text = "#%d" % uid
+		deck_container.add_child(card_panel)
 #endregion
 
 ## 创建一个小展示卡片（图标 + 名称 + 描述）
 func _create_item_card(title: String, desc: String, tex: Texture2D = null) -> PanelContainer:
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(90, 60)
+	var panel: PanelContainer = ITEM_CARD_SCENE.instantiate()
 
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.15, 0.15, 0.85)
-	style.corner_radius_top_left = 4
-	style.corner_radius_top_right = 4
-	style.corner_radius_bottom_left = 4
-	style.corner_radius_bottom_right = 4
-	style.content_margin_left = 4
-	style.content_margin_right = 4
-	style.content_margin_top = 4
-	style.content_margin_bottom = 4
-	panel.add_theme_stylebox_override("panel", style)
+	var icon: TextureRect = panel.get_node("%Icon")
+	var title_label: Label = panel.get_node("%TitleLabel")
+	var desc_label: Label = panel.get_node("%DescLabel")
 
-	var vbox := VBoxContainer.new()
-	panel.add_child(vbox)
+	title_label.text = title
+	desc_label.text = desc
 
 	if tex:
-		var icon := TextureRect.new()
 		icon.texture = tex
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.custom_minimum_size = Vector2(32, 32)
-		vbox.add_child(icon)
-
-	var title_label := Label.new()
-	title_label.text = title
-	title_label.add_theme_font_size_override("font_size", 11)
-	title_label.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
-	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(title_label)
-
-	var desc_label := Label.new()
-	desc_label.text = desc
-	desc_label.add_theme_font_size_override("font_size", 9)
-	desc_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	vbox.add_child(desc_label)
+		icon.visible = true
 
 	return panel

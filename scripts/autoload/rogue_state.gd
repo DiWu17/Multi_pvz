@@ -12,13 +12,18 @@ signal run_ended
 var deck: Dictionary = {}  # CharacterRegistry.PlantType -> int (stock count)
 var starting_sun: int = 50
 
+# --- 卡牌实例 UID 系统 ---
+# 每张卡牌都有唯一 UID，用于实例级附魔
+var card_uids: Dictionary = {}  # CharacterRegistry.PlantType -> Array[int]
+var _next_card_uid: int = 0
+
 # --- Gold ---
 var gold: int = 0
 
 # --- Buff / Relic 已迁移至 RogueBuffManager (基于 Resource 的系统) ---
-# 以下属性保留为兼容桥接，实际数据由 RogueBuffManager 管理
+# Buff 系统已重构为卡牌附魔系统，以下属性保留为兼容桥接
 var active_buffs: Array:
-	get: return _buffs_to_dicts(RogueBuffManager.get_buffs())
+	get: return []
 var relics: Array:
 	get: return _relics_to_dicts(RogueBuffManager.get_relics())
 
@@ -48,12 +53,20 @@ func start_run() -> void:
 	# Reset everything and set initial deck
 	deck = {
 		CharacterRegistry.PlantType.P002SunFlower: 5,
-		CharacterRegistry.PlantType.P001PeaShooterSingle: 10,
+		CharacterRegistry.PlantType.P001PeaShooterSingle: 5,
 		CharacterRegistry.PlantType.P005PotatoMine: 3,
 		CharacterRegistry.PlantType.P004WallNut: 2,
 	}
 	starting_sun = 50
 	gold = 0
+	_next_card_uid = 0
+	card_uids = {}
+	# 为初始卡组分配 UID
+	for plant_type in deck:
+		card_uids[plant_type] = []
+		for i in range(deck[plant_type]):
+			card_uids[plant_type].append(_next_card_uid)
+			_next_card_uid += 1
 	RogueBuffManager.reset()
 	is_run_active = true
 	current_floor = 0
@@ -71,6 +84,11 @@ func end_run() -> void:
 ## Add plants to deck (e.g. as reward)
 func add_plant(plant_type: CharacterRegistry.PlantType, count: int = 1) -> void:
 	deck[plant_type] = deck.get(plant_type, 0) + count
+	if not card_uids.has(plant_type):
+		card_uids[plant_type] = []
+	for i in range(count):
+		card_uids[plant_type].append(_next_card_uid)
+		_next_card_uid += 1
 	deck_changed.emit()
 
 ## Remove one stock of a plant (consumed during battle). Returns false if no stock.
@@ -79,8 +97,13 @@ func consume_plant(plant_type: CharacterRegistry.PlantType) -> bool:
 	if current <= 0:
 		return false
 	deck[plant_type] = current - 1
+	# 移除最后一个 UID，同时清理其附魔
+	if card_uids.has(plant_type) and not card_uids[plant_type].is_empty():
+		var removed_uid: int = card_uids[plant_type].pop_back()
+		RogueBuffManager.remove_instance_enchants(removed_uid)
 	if deck[plant_type] <= 0:
 		deck.erase(plant_type)
+		card_uids.erase(plant_type)
 	deck_changed.emit()
 	return true
 
@@ -99,6 +122,19 @@ func build_conveyor_probabilities() -> Dictionary[CharacterRegistry.PlantType, i
 		probs[plant_type] = deck[plant_type]
 	return probs
 
+## 获取所有卡牌实例（展开为单独条目，每张卡有 uid）
+## 返回 Array[Dictionary]，每个元素: {uid: int, plant_type: PlantType, enchants: Array[BuffData]}
+func get_all_card_instances() -> Array:
+	var result: Array = []
+	for plant_type in card_uids:
+		for uid in card_uids[plant_type]:
+			result.append({
+				"uid": uid,
+				"plant_type": plant_type,
+				"enchants": RogueBuffManager.get_instance_enchants(uid),
+			})
+	return result
+
 # --- Gold helpers ---
 func add_gold(amount: int) -> void:
 	gold += amount
@@ -113,19 +149,15 @@ func spend_gold(amount: int) -> bool:
 
 # --- Buff / Relic 桥接 API (兼容旧代码, 推荐直接使用 RogueBuffManager) ---
 
-## 通过旧式字典添加 buff (向后兼容)
+## 通过旧式字典添加 buff (已废弃，buff 已重构为卡牌附魔)
 func add_buff(buff_id: String, buff_name: String, description: String, params: Dictionary = {}) -> void:
-	var buff := BuffData.new()
-	buff.id = StringName(buff_id)
-	buff.display_name = buff_name
-	buff.description = description
-	RogueBuffManager.add_buff(buff)
+	push_warning("[RogueState] add_buff() 已废弃，buff 系统已重构为卡牌附魔系统")
 
 func remove_buff(buff_id: String) -> void:
-	RogueBuffManager.remove_buff(StringName(buff_id))
+	push_warning("[RogueState] remove_buff() 已废弃")
 
 func has_buff(buff_id: String) -> bool:
-	return RogueBuffManager.has_buff(StringName(buff_id))
+	return false
 
 ## 通过旧式字典添加遗物 (向后兼容)
 func add_relic(relic_id: String, relic_name: String, description: String, params: Dictionary = {}) -> void:
@@ -142,5 +174,15 @@ func has_relic(relic_id: String) -> bool:
 func add_relic_resource(relic: RelicData) -> void:
 	RogueBuffManager.add_relic(relic)
 
+## 为卡牌添加附魔 (按 UID，新系统)
+func add_card_enchant_by_uid(card_uid: int, enchant: BuffData) -> void:
+	RogueBuffManager.add_instance_enchant(card_uid, enchant)
+
+## 为卡牌添加附魔 (按类型，给该类型所有实例添加)
+func add_card_enchant(plant_type: CharacterRegistry.PlantType, enchant: BuffData) -> void:
+	if card_uids.has(plant_type):
+		for uid in card_uids[plant_type]:
+			RogueBuffManager.add_instance_enchant(uid, enchant)
+
 func add_buff_resource(buff: BuffData) -> void:
-	RogueBuffManager.add_buff(buff)
+	push_warning("[RogueState] add_buff_resource() 已废弃，请使用 add_card_enchant()")

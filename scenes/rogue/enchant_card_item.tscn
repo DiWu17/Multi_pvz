@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://cgx8umfxdpd7y"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_normal"]
+bg_color = Color(0.15, 0.15, 0.15, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.3, 0.3, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="EnchantCardItem" type="PanelContainer" unique_id=1414738712]
+custom_minimum_size = Vector2(80, 110)
+theme_override_styles/panel = SubResource("StyleBoxFlat_normal")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1325697537]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="CardSlot" type="CenterContainer" parent="VBoxContainer" unique_id=2059941501]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="EnchantLabel" type="Label" parent="VBoxContainer" unique_id=826598761]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 10
+horizontal_alignment = 1
+
+[node name="UidLabel" type="Label" parent="VBoxContainer" unique_id=911223199]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 9
+horizontal_alignment = 1

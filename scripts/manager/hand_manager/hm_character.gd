@@ -203,6 +203,10 @@ func click_cell(plant_cell:PlantCell):
 		## 单人模式：原始逻辑
 		if curr_card.card_plant_type != 0:
 			plant_cell.create_plant(curr_card.card_plant_type, curr_card.is_imitater)
+			## 附魔：南瓜灯 - 放下后自动套上南瓜头
+			if curr_card.has_meta("enchant_pumpkin") and curr_card.get_meta("enchant_pumpkin"):
+				if not is_instance_valid(plant_cell.plant_in_cell.get(CharacterRegistry.PlacePlantInCell.Shell)):
+					plant_cell.create_plant(CharacterRegistry.PlantType.P031Pumpkin)
 		else:
 			var zombie_init_para:Dictionary = {
 				Zombie000Base.E_ZInitAttr.CharacterInitType:Character000Base.E_CharacterInitType.IsNorm,

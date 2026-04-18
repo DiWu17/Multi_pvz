@@ -10,7 +10,7 @@ signal room_completed()
 @onready var background: TextureRect = $Background
 @onready var continue_button: TextureButton = $ContinueButton
 @onready var gold_label: Label = $GoldLabel
-@onready var items_container: HBoxContainer = $Background/Car/ItemsContainer
+@onready var items_container: GridContainer = $Background/Car/ItemsContainer
 @onready var confirm_panel: Control = $ConfirmPanel
 @onready var confirm_label: Label = $ConfirmPanel/Dialog/MarginContainer/ConfirmLabel
 @onready var yes_button: Button = $ConfirmPanel/Dialog/HBoxContainer/YesButton
@@ -18,21 +18,60 @@ signal room_completed()
 
 ## 价格标签贴图 (用于动态创建商品)
 const PRICE_TAG_TEX := preload("res://assets/image/store/Store_PriceTag.png")
+const GOODS_ITEM_SCENE: PackedScene = preload("res://scenes/rogue/shop_goods_item.tscn")
+## 新的商品显示场景
+const GOODS_DISPLAY_SCENE: PackedScene = preload("res://scenes/rogue/shop_goods_display.tscn")
 
-## 商店物品模板
-const SHOP_ITEMS: Array = [
-	{"name": "随机植物卡", "cost": 40, "type": "plant", "icon_color": Color(0.4, 0.8, 0.3)},
-	{"name": "植物升级券", "cost": 55, "type": "upgrade", "icon_color": Color(0.3, 0.6, 0.9)},
-	{"name": "随机遗物", "cost": 100, "type": "relic", "icon_color": Color(0.9, 0.7, 0.2)},
-	{"name": "铲除植物", "cost": 5, "type": "remove", "icon_color": Color(0.8, 0.3, 0.3)},
-]
-
-## 可购买的植物池
+## 可购买的植物池 - 包含所有可用植物
 const PLANT_POOL: Array = [
 	CharacterRegistry.PlantType.P001PeaShooterSingle,
 	CharacterRegistry.PlantType.P002SunFlower,
+	CharacterRegistry.PlantType.P003CherryBomb,
 	CharacterRegistry.PlantType.P004WallNut,
 	CharacterRegistry.PlantType.P005PotatoMine,
+	CharacterRegistry.PlantType.P006SnowPea,
+	CharacterRegistry.PlantType.P007Chomper,
+	CharacterRegistry.PlantType.P008PeaShooterDouble,
+	CharacterRegistry.PlantType.P009PuffShroom,
+	CharacterRegistry.PlantType.P010SunShroom,
+	CharacterRegistry.PlantType.P011FumeShroom,
+	CharacterRegistry.PlantType.P012GraveBuster,
+	CharacterRegistry.PlantType.P013HypnoShroom,
+	CharacterRegistry.PlantType.P014ScaredyShroom,
+	CharacterRegistry.PlantType.P015IceShroom,
+	CharacterRegistry.PlantType.P016DoomShroom,
+	CharacterRegistry.PlantType.P017LilyPad,
+	CharacterRegistry.PlantType.P018Squash,
+	CharacterRegistry.PlantType.P019ThreePeater,
+	CharacterRegistry.PlantType.P020TangleKelp,
+	CharacterRegistry.PlantType.P021Jalapeno,
+	CharacterRegistry.PlantType.P022Caltrop,
+	CharacterRegistry.PlantType.P023TorchWood,
+	CharacterRegistry.PlantType.P024TallNut,
+	CharacterRegistry.PlantType.P025SeaShroom,
+	CharacterRegistry.PlantType.P026Plantern,
+	CharacterRegistry.PlantType.P027Cactus,
+	CharacterRegistry.PlantType.P028Blover,
+	CharacterRegistry.PlantType.P029SplitPea,
+	CharacterRegistry.PlantType.P030StarFruit,
+	CharacterRegistry.PlantType.P031Pumpkin,
+	CharacterRegistry.PlantType.P032MagnetShroom,
+	CharacterRegistry.PlantType.P033CabbagePult,
+	CharacterRegistry.PlantType.P034FlowerPot,
+	CharacterRegistry.PlantType.P035CornPult,
+	CharacterRegistry.PlantType.P036CoffeeBean,
+	CharacterRegistry.PlantType.P037Garlic,
+	CharacterRegistry.PlantType.P038UmbrellaLeaf,
+	CharacterRegistry.PlantType.P039MariGold,
+	CharacterRegistry.PlantType.P040MelonPult,
+	CharacterRegistry.PlantType.P041GatlingPea,
+	CharacterRegistry.PlantType.P042TwinSunFlower,
+	CharacterRegistry.PlantType.P043GloomShroom,
+	CharacterRegistry.PlantType.P044Cattail,
+	CharacterRegistry.PlantType.P045WinterMelon,
+	CharacterRegistry.PlantType.P046GoldMagnet,
+	CharacterRegistry.PlantType.P047SpikeRock,
+	CharacterRegistry.PlantType.P048CobCannon,
 ]
 
 ## 当前待确认的商品和按钮
@@ -65,117 +104,79 @@ func _populate_shop() -> void:
 		child.queue_free()
 	_goods_data.clear()
 
-	var available: Array = SHOP_ITEMS.duplicate()
-	available.shuffle()
-	var count: int = mini(available.size(), randi_range(3, 4))
+	# 添加3个随机植物
+	var plant_pool_copy: Array = PLANT_POOL.duplicate()
+	plant_pool_copy.shuffle()
+	for i in range(min(3, plant_pool_copy.size())):
+		var plant_type = plant_pool_copy[i]
+		var plant_info = CharacterRegistry.PlantInfo.get(plant_type, {})
+		var plant_name = plant_info.get(CharacterRegistry.PlantInfoAttribute.PlantName, "未知植物")
+		var plant_goods_display: Control = GOODS_DISPLAY_SCENE.instantiate()
+		plant_goods_display.buy_pressed.connect(_on_goods_buy_pressed)
+		items_container.add_child(plant_goods_display)
+		_goods_data[plant_goods_display] = {
+			"type": "plant",
+			"plant_type": plant_type,
+			"name": plant_name,
+			"cost": 40
+		}
+		# 异步初始化，不需要等待
+		plant_goods_display.init_plant(plant_type, plant_name, 40)
+	
+	# 添加3个随机遗物
+	var relic_paths := _scan_relics()
+	relic_paths.shuffle()
+	var relic_count := 0
+	for i in range(relic_paths.size()):
+		if relic_count >= 3:
+			break
+		var relic: RelicData = load(relic_paths[i])
+		if relic and not RogueBuffManager.has_relic(relic.id):
+			var relic_goods_display: Control = GOODS_DISPLAY_SCENE.instantiate()
+			relic_goods_display.buy_pressed.connect(_on_goods_buy_pressed)
+			items_container.add_child(relic_goods_display)
+			_goods_data[relic_goods_display] = {
+				"type": "relic",
+				"relic": relic,
+				"name": relic.display_name,
+				"cost": 100
+			}
+			# 异步初始化，不需要等待
+			relic_goods_display.init_relic(relic, 100)
+			relic_count += 1
+	
+	# 添加铲子服务
+	var shovel_goods_display: Control = GOODS_DISPLAY_SCENE.instantiate()
+	shovel_goods_display.buy_pressed.connect(_on_goods_buy_pressed)
+	items_container.add_child(shovel_goods_display)
+	_goods_data[shovel_goods_display] = {
+		"type": "remove",
+		"name": "铲除植物",
+		"cost": 5
+	}
+	# 异步初始化，不需要等待
+	shovel_goods_display.init_shovel(5)
 
-	for i in range(count):
-		var item: Dictionary = available[i]
-		var goods_node := _create_goods_node(item)
-		items_container.add_child(goods_node)
-		_goods_data[goods_node] = item
-
-## 创建单个商品节点 — 复用原版 goods 的视觉结构
-func _create_goods_node(item: Dictionary) -> Control:
-	var root := Control.new()
-	root.custom_minimum_size = Vector2(80, 120)
-
-	var vbox := VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	root.add_child(vbox)
-
-	# 商品图标区域 (彩色方块占位，带商品名)
-	var icon_panel := Panel.new()
-	icon_panel.custom_minimum_size = Vector2(67, 68)
-	vbox.add_child(icon_panel)
-
-	var icon_color := ColorRect.new()
-	icon_color.color = item.get("icon_color", Color(0.5, 0.5, 0.5))
-	icon_color.set_anchors_preset(Control.PRESET_FULL_RECT)
-	icon_color.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon_panel.add_child(icon_color)
-
-	var name_label := Label.new()
-	name_label.text = item["name"]
-	name_label.set_anchors_preset(Control.PRESET_CENTER)
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	name_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	name_label.add_theme_font_size_override("font_size", 12)
-	name_label.add_theme_color_override("font_color", Color.WHITE)
-	name_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	name_label.add_theme_constant_override("outline_size", 2)
-	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon_panel.add_child(name_label)
-
-	# 卖光标签 (初始隐藏)
-	var sold_label := Label.new()
-	sold_label.name = "SoldLabel"
-	sold_label.text = "卖光了"
-	sold_label.visible = false
-	sold_label.set_anchors_preset(Control.PRESET_CENTER)
-	sold_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sold_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	sold_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	sold_label.add_theme_font_size_override("font_size", 18)
-	sold_label.add_theme_color_override("font_color", Color(1, 0, 0))
-	sold_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	sold_label.add_theme_constant_override("outline_size", 2)
-	sold_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon_panel.add_child(sold_label)
-
-	# 点击按钮 (覆盖在图标上)
-	var btn := Button.new()
-	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
-	btn.flat = true
-	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn.mouse_filter = Control.MOUSE_FILTER_STOP
-	btn.disabled = RogueState.gold < item["cost"]
-	btn.pressed.connect(_on_goods_pressed.bind(root))
-	btn.name = "BuyButton"
-	icon_panel.add_child(btn)
-
-	# 价格标签
-	var price_tag := TextureRect.new()
-	price_tag.texture = PRICE_TAG_TEX
-	price_tag.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	vbox.add_child(price_tag)
-
-	var price_label := Label.new()
-	price_label.text = "$%d" % item["cost"]
-	price_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	price_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	price_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	price_tag.add_child(price_label)
-
-	# 鼠标悬停动画
-	root.mouse_entered.connect(func(): _goods_hover(root, true))
-	root.mouse_exited.connect(func(): _goods_hover(root, false))
-
-	return root
-
-func _goods_hover(node: Control, entered: bool) -> void:
-	var tween := node.create_tween()
-	if entered:
-		tween.tween_property(node, "scale", Vector2(1.08, 1.08), 0.1)
-	else:
-		tween.tween_property(node, "scale", Vector2.ONE, 0.1)
+## 当商品被购买时的处理
+func _on_goods_buy_pressed(item: Dictionary) -> void:
+	if item.is_empty():
+		return
+	_pending_item = item
+	# 从_goods_data中查找对应的goods_node
+	var goods_node = null
+	for node in _goods_data:
+		if _goods_data[node] == item:
+			goods_node = node
+			break
+	_pending_goods_node = goods_node
+	confirm_label.text = "是否花费 $%d 购买\n「%s」？" % [item["cost"], item["name"]]
+	confirm_panel.visible = true
 
 # ══════════════════════════════════════════
 #  购买确认流程
 # ══════════════════════════════════════════
 
-func _on_goods_pressed(goods_node: Control) -> void:
-	var item: Dictionary = _goods_data.get(goods_node, {})
-	if item.is_empty():
-		return
-	_pending_item = item
-	_pending_goods_node = goods_node
-	confirm_label.text = "是否花费 $%d 购买\n「%s」？" % [item["cost"], item["name"]]
-	confirm_panel.visible = true
+
 
 func _on_confirm_yes() -> void:
 	confirm_panel.visible = false
@@ -195,14 +196,10 @@ func _do_purchase(item: Dictionary, goods_node: Control) -> void:
 	if not RogueState.spend_gold(cost):
 		return
 
-	# 标记已售
-	var btn: Button = goods_node.find_child("BuyButton")
-	if btn:
-		btn.disabled = true
-	var sold_label: Label = goods_node.find_child("SoldLabel")
-	if sold_label:
-		sold_label.visible = true
-		sold_label.text = _execute_purchase(item)
+	# 标记已售并执行购买
+	if goods_node and goods_node.has_method("mark_sold"):
+		var result = _execute_purchase(item)
+		goods_node.mark_sold(result)
 
 	_update_gold_display()
 	_refresh_button_states()
@@ -214,22 +211,13 @@ func _do_purchase(item: Dictionary, goods_node: Control) -> void:
 func _execute_purchase(item: Dictionary) -> String:
 	match item["type"]:
 		"plant":
-			var plant_type = PLANT_POOL[randi() % PLANT_POOL.size()]
+			var plant_type = item["plant_type"]
 			RogueState.add_plant(plant_type)
 			return "已购买"
-		"upgrade":
-			var owned_types: Array = RogueState.deck.keys()
-			if owned_types.is_empty():
-				return "卡组为空"
-			var upgrade_type = owned_types[randi() % owned_types.size()]
-			RogueState.add_plant(upgrade_type)
-			return "已购买"
 		"relic":
-			var relic_paths := _scan_relics()
-			relic_paths.shuffle()
-			for path in relic_paths:
-				var relic: RelicData = load(path)
-				if relic and not RogueBuffManager.has_relic(relic.id):
+			if "relic" in item:
+				var relic: RelicData = item["relic"]
+				if not RogueBuffManager.has_relic(relic.id):
 					RogueBuffManager.add_relic(relic)
 					return relic.display_name
 			return "无可用遗物"
@@ -254,10 +242,8 @@ func _refresh_button_states() -> void:
 	for goods_node in _goods_data:
 		if not is_instance_valid(goods_node):
 			continue
-		var item: Dictionary = _goods_data[goods_node]
-		var btn: Button = goods_node.find_child("BuyButton")
-		if btn and not goods_node.find_child("SoldLabel").visible:
-			btn.disabled = RogueState.gold < item["cost"]
+		if goods_node and goods_node.has_method("update_button_state"):
+			goods_node.update_button_state()
 
 # ══════════════════════════════════════════
 #  工具方法

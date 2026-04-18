@@ -411,8 +411,8 @@ func change_is_swimming(value:bool):
 func _apply_attack_multiplier(base_value: int) -> int:
 	if RogueState.is_run_active:
 		var final_value := int(base_value * RogueBuffManager.get_attack_multiplier())
-		if final_value != base_value:
-			print("[攻击倍率] %s 受到伤害: %d -> %d (倍率 x%.2f)" % [name, base_value, final_value, RogueBuffManager.get_attack_multiplier()])
+		# if final_value != base_value:
+			# print("[攻击倍率] %s 受到伤害: %d -> %d (倍率 x%.2f)" % [name, base_value, final_value, RogueBuffManager.get_attack_multiplier()])
 		return final_value
 	return base_value
 

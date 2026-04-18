@@ -86,15 +86,14 @@ grow_horizontal = 2
 mouse_filter = 2
 texture = ExtResource("4_hatch")
 
-[node name="ItemsContainer" type="HBoxContainer" parent="Background/Car" unique_id=881286479]
+[node name="ItemsContainer" type="GridContainer" parent="Background/Car" unique_id=39516215]
 layout_mode = 0
 offset_left = 140.0
-offset_top = 55.0
-offset_right = 500.0
-offset_bottom = 250.0
+offset_top = -17.0
+offset_right = 545.0
+offset_bottom = 298.0
 mouse_filter = 2
-theme_override_constants/separation = 12
-alignment = 1
+columns = 4
 
 [node name="StoreSign" type="TextureRect" parent="Background" unique_id=2101881736]
 layout_mode = 1
@@ -266,5 +265,5 @@ size_flags_horizontal = 6
 text = "取消"
 
 [node name="CrazyDave" parent="." unique_id=370347709 instance=ExtResource("10_5us8r")]
-position = Vector2(44, 0)
+position = Vector2(-2, 7)
 dialog_resource = SubResource("Resource_tuurf")

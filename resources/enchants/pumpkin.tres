@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BuffData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/buff_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"enchant_pumpkin"
+display_name = "南瓜灯"
+description = "该卡牌放下后自带一个南瓜灯"
+rarity = 1
+enchant_type = 1
+param_float = 0.0
+param_int = 0
+tags = PackedStringArray()

@@ -648,9 +648,8 @@ func _handle_post_battle() -> void:
 	RogueState.battles_won += 1
 	
 	# Show buff selection
-	var buff_scene := preload("res://scripts/rogue/buff_selection.gd")
-	var buff_ui := Control.new()
-	buff_ui.set_script(buff_scene)
+	var buff_scene := preload("res://scenes/rogue/buff_selection.tscn")
+	var buff_ui: BuffSelection = buff_scene.instantiate()
 	buff_ui.setup(config.get("reward_picks", 2))
 	add_child(buff_ui)
 	await buff_ui.selection_completed

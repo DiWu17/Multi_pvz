@@ -1,25 +1,28 @@
 extends Node
-## 肉鸽Buff/遗物效果管理器
+## 肉鸽遗物 & 卡牌附魔管理器
 ##
 ## 职责:
-## 1. 维护当前 run 中激活的 RelicData / BuffData 列表
-## 2. 提供 query API 供游戏各系统查询聚合后的效果数值
-## 3. 监听 EventBus 事件，执行触发型效果 (如击杀获得阳光)
+## 1. 维护当前 run 中激活的 RelicData 列表 (遗物 = 全局被动效果)
+## 2. 维护卡牌附魔映射 (附魔 = 绑定到特定植物类型的效果)
+## 3. 提供 query API 供游戏各系统查询聚合后的效果数值
+## 4. 监听 EventBus 事件，执行触发型效果 (如击杀获得阳光)
 ##
 ## 设计原则 — "查询式" 而非 "修改式":
 ##   游戏系统在需要时主动调用 get_xxx() 查询最终数值，
 ##   而不是由本 Manager 去修改各系统的内部变量。
-##   这样每个效果的来源都可追溯，移除效果也不会留下脏数据。
 
 ## ─── 信号 ───
 signal relics_changed
-signal buffs_changed
+signal enchants_changed
 
-## ─── 激活列表 ───
+## ─── 遗物列表 ───
 var _active_relics: Array[RelicData] = []
-var _active_buffs: Array[BuffData] = []
-## Buff 叠加计数 {buff_id: current_stacks}
-var _buff_stacks: Dictionary = {}
+
+## ─── 卡牌实例附魔 ───
+## { int (card_uid) -> Array[BuffData] }
+## 每张卡牌实例可以有多个附魔
+var _card_instance_enchants: Dictionary = {}
+
 ## 当前战斗的基础僵尸血量/攻击倍率 (battle_room 设置)
 var _base_zombie_hp_mult: float = 1.0
 var _base_zombie_atk_mult: float = 1.0
@@ -35,12 +38,11 @@ func _ready() -> void:
 ## 开始新一轮 run 时清空所有效果
 func reset() -> void:
 	_active_relics.clear()
-	_active_buffs.clear()
-	_buff_stacks.clear()
+	_card_instance_enchants.clear()
 	_base_zombie_hp_mult = 1.0
 	_base_zombie_atk_mult = 1.0
 	relics_changed.emit()
-	buffs_changed.emit()
+	enchants_changed.emit()
 
 # ══════════════════════════════════════════
 #  遗物 API
@@ -69,34 +71,110 @@ func get_relics() -> Array[RelicData]:
 	return _active_relics
 
 # ══════════════════════════════════════════
-#  Buff API
+#  卡牌实例附魔 API
 # ══════════════════════════════════════════
 
-func add_buff(buff: BuffData) -> void:
-	var current_stacks: int = _buff_stacks.get(buff.id, 0)
-	if buff.max_stacks > 0 and current_stacks >= buff.max_stacks:
+## 为指定卡牌实例 (UID) 添加附魔
+func add_instance_enchant(card_uid: int, enchant: BuffData) -> void:
+	if not _card_instance_enchants.has(card_uid):
+		_card_instance_enchants[card_uid] = []
+	_card_instance_enchants[card_uid].append(enchant)
+	enchants_changed.emit()
+
+## 移除指定卡牌实例的某个附魔
+func remove_instance_enchant(card_uid: int, enchant_id: StringName) -> void:
+	if not _card_instance_enchants.has(card_uid):
 		return
-	_active_buffs.append(buff)
-	_buff_stacks[buff.id] = current_stacks + 1
-	buffs_changed.emit()
+	var enchants: Array = _card_instance_enchants[card_uid]
+	for i in range(enchants.size() - 1, -1, -1):
+		if enchants[i].id == enchant_id:
+			enchants.remove_at(i)
+			break
+	if enchants.is_empty():
+		_card_instance_enchants.erase(card_uid)
+	enchants_changed.emit()
+
+## 清除指定卡牌实例的所有附魔（卡牌被移除时调用）
+func remove_instance_enchants(card_uid: int) -> void:
+	if _card_instance_enchants.has(card_uid):
+		_card_instance_enchants.erase(card_uid)
+
+## 获取指定卡牌实例的所有附魔
+func get_instance_enchants(card_uid: int) -> Array:
+	return _card_instance_enchants.get(card_uid, [])
+
+## 检查指定卡牌实例是否有某种附魔
+func instance_has_enchant(card_uid: int, enchant_name: StringName) -> bool:
+	if not _card_instance_enchants.has(card_uid):
+		return false
+	for e in _card_instance_enchants[card_uid]:
+		match enchant_name:
+			&"pumpkin":
+				if e.enchant_type == BuffData.EnchantType.PUMPKIN:
+					return true
+			&"inherent":
+				if e.enchant_type == BuffData.EnchantType.INHERENT:
+					return true
+			&"consumable":
+				if e.enchant_type == BuffData.EnchantType.CONSUMABLE:
+					return true
+	return false
+
+## 检查指定植物类型是否有任何实例拥有某种附魔（用于传送带等类型级查询）
+func card_has_enchant(plant_type, enchant_name: StringName) -> bool:
+	if not RogueState.card_uids.has(plant_type):
+		return false
+	for uid in RogueState.card_uids[plant_type]:
+		if instance_has_enchant(uid, enchant_name):
+			return true
+	return false
+
+## 获取指定植物类型中拥有某种附魔的所有 UID
+func get_uids_with_enchant(plant_type, enchant_name: StringName) -> Array[int]:
+	var result: Array[int] = []
+	if not RogueState.card_uids.has(plant_type):
+		return result
+	for uid in RogueState.card_uids[plant_type]:
+		if instance_has_enchant(uid, enchant_name):
+			result.append(uid)
+	return result
+
+## 获取所有实例附魔映射
+func get_all_instance_enchants() -> Dictionary:
+	return _card_instance_enchants
+
+## ─── 旧的类型级附魔 API (兼容桥接) ───
+
+func add_card_enchant(plant_type, enchant: BuffData) -> void:
+	push_warning("[RogueBuffManager] add_card_enchant(plant_type) 已废弃，请使用 add_instance_enchant(uid)")
+	## 兼容：给该类型所有实例添加
+	if RogueState.card_uids.has(plant_type):
+		for uid in RogueState.card_uids[plant_type]:
+			add_instance_enchant(uid, enchant)
+
+func get_card_enchants(plant_type) -> Array:
+	var result: Array = []
+	if RogueState.card_uids.has(plant_type):
+		for uid in RogueState.card_uids[plant_type]:
+			result.append_array(get_instance_enchants(uid))
+	return result
+
+func get_all_enchants() -> Dictionary:
+	return _card_instance_enchants
+
+## ─── Buff 兼容 API (桥接旧代码，实际已迁移) ───
+
+func add_buff(buff: BuffData) -> void:
+	push_warning("[RogueBuffManager] add_buff() 已废弃，请使用 add_card_enchant() 或 add_relic()")
 
 func remove_buff(buff_id: StringName) -> void:
-	for i in range(_active_buffs.size() - 1, -1, -1):
-		if _active_buffs[i].id == buff_id:
-			_active_buffs.remove_at(i)
-			var stacks: int = _buff_stacks.get(buff_id, 1) - 1
-			if stacks <= 0:
-				_buff_stacks.erase(buff_id)
-			else:
-				_buff_stacks[buff_id] = stacks
-			break
-	buffs_changed.emit()
+	push_warning("[RogueBuffManager] remove_buff() 已废弃")
 
 func has_buff(buff_id: StringName) -> bool:
-	return _buff_stacks.get(buff_id, 0) > 0
+	return false
 
 func get_buffs() -> Array[BuffData]:
-	return _active_buffs
+	return []
 
 # ══════════════════════════════════════════
 #  效果查询 API — 游戏系统调用这些方法获取聚合值
@@ -109,9 +187,6 @@ func get_sun_production_multiplier() -> float:
 	for r in _active_relics:
 		if r.effect_type == RelicData.EffectType.SUN_PRODUCTION_MULTIPLIER:
 			mult += r.param_float
-	for b in _active_buffs:
-		if b.effect_type == RelicData.EffectType.SUN_PRODUCTION_MULTIPLIER:
-			mult += b.param_float
 	return mult
 
 ## 获取植物攻击力倍率 (1.0 = 无加成)
@@ -120,9 +195,6 @@ func get_attack_multiplier() -> float:
 	for r in _active_relics:
 		if r.effect_type == RelicData.EffectType.ATTACK_MULTIPLIER:
 			mult += r.param_float
-	for b in _active_buffs:
-		if b.effect_type == RelicData.EffectType.ATTACK_MULTIPLIER:
-			mult += b.param_float
 	return mult
 
 ## 获取初始阳光加成总值
@@ -131,9 +203,6 @@ func get_starting_sun_bonus() -> int:
 	for r in _active_relics:
 		if r.effect_type == RelicData.EffectType.STARTING_SUN_BONUS:
 			bonus += r.param_int
-	for b in _active_buffs:
-		if b.effect_type == RelicData.EffectType.STARTING_SUN_BONUS:
-			bonus += b.param_int
 	return bonus
 
 ## 获取自然阳光产出速率倍率 (1.0 = 正常, < 1.0 = 更快)
@@ -143,18 +212,12 @@ func get_sky_sun_rate_multiplier() -> float:
 	for r in _active_relics:
 		if r.effect_type == RelicData.EffectType.SKY_SUN_RATE_MULTIPLIER:
 			mult -= r.param_float
-	for b in _active_buffs:
-		if b.effect_type == RelicData.EffectType.SKY_SUN_RATE_MULTIPLIER:
-			mult -= b.param_float
 	return maxf(mult, 0.1)  # 最低不低于 0.1
 
 ## 是否启用自动拾取阳光
 func is_auto_collect_sun() -> bool:
 	for r in _active_relics:
 		if r.effect_type == RelicData.EffectType.AUTO_COLLECT_SUN:
-			return true
-	for b in _active_buffs:
-		if b.effect_type == RelicData.EffectType.AUTO_COLLECT_SUN:
 			return true
 	return false
 
@@ -164,13 +227,10 @@ func get_sun_on_kill() -> int:
 	for r in _active_relics:
 		if r.effect_type == RelicData.EffectType.SUN_ON_KILL:
 			total += r.param_int
-	for b in _active_buffs:
-		if b.effect_type == RelicData.EffectType.SUN_ON_KILL:
-			total += b.param_int
 	return total
 
 # ══════════════════════════════════════════
-#  通用聚合查询 — 按 EffectType 查询所有匹配效果
+#  通用聚合查询 — 按 EffectType 查询所有匹配的遗物效果
 # ══════════════════════════════════════════
 
 ## 获取指定效果类型的所有浮点参数之和
@@ -179,9 +239,6 @@ func sum_float_by_effect(effect_type: RelicData.EffectType) -> float:
 	for r in _active_relics:
 		if r.effect_type == effect_type:
 			total += r.param_float
-	for b in _active_buffs:
-		if b.effect_type == effect_type:
-			total += b.param_float
 	return total
 
 ## 获取指定效果类型的所有整数参数之和
@@ -190,18 +247,12 @@ func sum_int_by_effect(effect_type: RelicData.EffectType) -> int:
 	for r in _active_relics:
 		if r.effect_type == effect_type:
 			total += r.param_int
-	for b in _active_buffs:
-		if b.effect_type == effect_type:
-			total += b.param_int
 	return total
 
-## 是否拥有指定效果类型的任意遗物或buff
+## 是否拥有指定效果类型的任意遗物
 func has_effect(effect_type: RelicData.EffectType) -> bool:
 	for r in _active_relics:
 		if r.effect_type == effect_type:
-			return true
-	for b in _active_buffs:
-		if b.effect_type == effect_type:
 			return true
 	return false
 

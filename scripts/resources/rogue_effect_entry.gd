@@ -10,7 +10,7 @@ enum EffectType {
 	NONE = 0,
 	## 添加遗物 (resource_path 指向 .tres)
 	ADD_RELIC,
-	## 添加 Buff (resource_path 指向 .tres)
+	## [已废弃] 旧 Buff 已迁移为遗物，等同于 ADD_RELIC
 	ADD_BUFF,
 	## 添加金币 (param_int = 数量, 可为负)
 	ADD_GOLD,
@@ -24,12 +24,16 @@ enum EffectType {
 	ADD_RANDOM_PLANT,
 	## 添加随机遗物 (param_int = 数量)
 	ADD_RANDOM_RELIC,
-	## 添加随机 Buff (param_int = 数量)
+	## [已废弃] 等同于 ADD_RANDOM_RELIC
 	ADD_RANDOM_BUFF,
 	## 概率分支: 以 param_float 的概率执行 success 效果组, 否则执行 fail 效果组
 	CHANCE,
 	## 自定义脚本 (param_string = 方法名, 由 EventRoom 调用)
 	CUSTOM,
+	## 为随机卡牌添加随机附魔 (param_int = 数量)
+	ADD_RANDOM_ENCHANT,
+	## 弹出附魔目标选择界面 (target_resource_path 指向 BuffData .tres, param_int = 最大选择数量)
+	ADD_ENCHANT_PICK_TARGET,
 }
 
 ## 效果类型

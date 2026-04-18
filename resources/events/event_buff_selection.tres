@@ -7,42 +7,45 @@
 
 [sub_resource type="Resource" id="effect_1"]
 script = ExtResource("3")
-type = 2
-target_resource_path = "res://resources/buff/auto_collect_sun.tres"
+type = 13
+target_resource_path = "res://resources/enchants/pumpkin.tres"
+param_int = 1
 
 [sub_resource type="Resource" id="option_1"]
 script = ExtResource("2")
-label = "阳光磁铁"
-description = "获得Buff: 自动拾取阳光"
+label = "南瓜灯附魔"
+description = "选择一张卡牌，为其附魔南瓜灯保护"
 effects = Array[ExtResource("3")]([SubResource("effect_1")])
 
 [sub_resource type="Resource" id="effect_2"]
 script = ExtResource("3")
-type = 2
-target_resource_path = "res://resources/buff/sky_sun_speed_up.tres"
+type = 13
+target_resource_path = "res://resources/enchants/inherent.tres"
+param_int = 1
 
 [sub_resource type="Resource" id="option_2"]
 script = ExtResource("2")
-label = "阳光加速"
-description = "获得Buff: 自然阳光产出速率+5%"
+label = "固有附魔"
+description = "选择一张卡牌，使其在每轮开始时立即出现"
 effects = Array[ExtResource("3")]([SubResource("effect_2")])
 
 [sub_resource type="Resource" id="effect_3"]
 script = ExtResource("3")
-type = 2
-target_resource_path = "res://resources/buff/starting_sun_bonus.tres"
+type = 13
+target_resource_path = "res://resources/enchants/consumable.tres"
+param_int = 1
 
 [sub_resource type="Resource" id="option_3"]
 script = ExtResource("2")
-label = "阳光储备"
-description = "获得Buff: 初始阳光+50"
+label = "消耗附魔"
+description = "选择一张卡牌，使用后不再回到卡组循环"
 effects = Array[ExtResource("3")]([SubResource("effect_3")])
 
 [resource]
 script = ExtResource("1")
-id = &"buff_selection"
-title = "戴夫的祝福"
-description = "疯狂戴夫心情大好，决定赐予你一项特殊的能力加持，你会选择哪一个？"
+id = &"enchant_selection"
+title = "戴夫的附魔台"
+description = "疯狂戴夫搬出了他的附魔台，可以为你的一张卡牌施加特殊附魔，你会选择哪一个？"
 background_image = ExtResource("1_aq23u")
 options = Array[ExtResource("2")]([SubResource("option_1"), SubResource("option_2"), SubResource("option_3")])
 max_occurrences = -1

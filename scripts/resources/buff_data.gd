@@ -1,42 +1,51 @@
 extends Resource
 class_name BuffData
-## Buff数据资源 — 定义一个Buff的属性和效果
+## 卡牌附魔数据资源 — 定义一个可以附加在卡牌上的附魔效果
 ##
-## 与 RelicData 共享 EffectType 枚举，二者本质都是"被动效果"，
-## 区别在于: 遗物是永久持有的，Buff 可以有持续时间 / 层数限制。
-## 扩展方式: 新增 EffectType 枚举值 + 在 RogueBuffManager 中添加对应处理逻辑
+## 附魔是绑定在特定植物卡牌上的特殊效果，在该卡牌被放置时生效。
+## 示例:
+##   - 南瓜灯: 放下后自带南瓜灯保护
+##   - 固有: 该卡牌必定第一个出现在传送带上
+##   - 消耗: 放置后不再出现在本局后续循环中
+##
+## 与 RelicData 的区别: 遗物是全局被动效果，附魔是绑定到特定卡牌上的效果。
 
-## Buff效果类型 — 复用 RelicData.EffectType 以保持统一
-const EffectType = RelicData.EffectType
+## 附魔效果类型
+enum EnchantType {
+	NONE = 0,
+	## 南瓜灯: 放置后自动套上南瓜灯
+	PUMPKIN,
+	## 固有: 必定第一个出现在传送带上
+	INHERENT,
+	## 消耗: 放置后不再出现在本局后续循环中
+	CONSUMABLE,
+}
 
-## Buff稀有度 — 复用 RelicData.Rarity
-const Rarity = RelicData.Rarity
+## 附魔稀有度
+enum Rarity {
+	COMMON = 0,   ## 普通
+	RARE = 1,     ## 稀有
+	EPIC = 2,     ## 史诗
+	LEGENDARY = 3 ## 传说
+}
 
-## Buff唯一ID
+## 附魔唯一ID
 @export var id: StringName = &""
-## Buff显示名称
+## 附魔显示名称
 @export var display_name: String = ""
-## Buff描述
+## 附魔描述
 @export var description: String = ""
-## Buff图标
+## 附魔图标
 @export var icon: Texture2D = preload("res://assets/image/relics/akabeko.png")
-## Buff稀有度
-@export var rarity: RelicData.Rarity = RelicData.Rarity.COMMON
+## 附魔稀有度
+@export var rarity: Rarity = Rarity.COMMON
 
 @export_group("效果参数")
-## 主效果类型
-@export var effect_type: RelicData.EffectType = RelicData.EffectType.NONE
+## 附魔效果类型
+@export var enchant_type: EnchantType = EnchantType.NONE
 ## 浮点参数 (用于倍率类效果)
 @export var param_float: float = 0.0
 ## 整数参数 (用于固定数值类效果)
 @export var param_int: int = 0
 ## 附加标签
 @export var tags: PackedStringArray = []
-
-@export_group("持续性")
-## 是否永久 (true = 整个run期间有效, false = 有持续回合/时间)
-@export var permanent: bool = true
-## 持续回合数 (-1 = 永久, 仅 permanent=false 时有效)
-@export var duration_rounds: int = -1
-## 可叠加层数上限 (-1 = 无限)
-@export var max_stacks: int = 1

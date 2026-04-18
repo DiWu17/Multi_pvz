@@ -23,12 +23,15 @@ const RELIC_PATHS: Array[String] = [
 	"res://resources/relics/vajra.tres",
 	"res://resources/relics/gremlin_horn.tres",
 	"res://resources/relics/happy_flower.tres",
+	"res://resources/relics/starting_sun_bonus.tres",
+	"res://resources/relics/auto_collect_sun.tres",
+	"res://resources/relics/sky_sun_speed_up.tres",
 ]
 
-const BUFF_PATHS: Array[String] = [
-	"res://resources/buff/starting_sun_bonus.tres",
-	"res://resources/buff/auto_collect_sun.tres",
-	"res://resources/buff/sky_sun_speed_up.tres",
+const ENCHANT_PATHS: Array[String] = [
+	"res://resources/enchants/pumpkin.tres",
+	"res://resources/enchants/inherent.tres",
+	"res://resources/enchants/consumable.tres",
 ]
 
 ## 当前事件
@@ -168,7 +171,7 @@ func _on_option_selected(option_index: int) -> void:
 	# 执行效果
 	var result_text := option.label
 	for effect in option.effects:
-		var effect_result := _execute_effect(effect)
+		var effect_result: String = await _execute_effect(effect)
 		if not effect_result.is_empty():
 			result_text += "\n" + effect_result
 
@@ -177,7 +180,7 @@ func _on_option_selected(option_index: int) -> void:
 		result_label.visible = true
 	continue_button.visible = true
 
-## 执行单个效果条目，返回结果描述文本
+## 执行单个效果条目，返回结果描述文本（支持 await）
 func _execute_effect(effect: Resource) -> String:
 	match effect.type:
 		RogueEffectEntry.EffectType.NONE:
@@ -190,10 +193,11 @@ func _execute_effect(effect: Resource) -> String:
 				return "获得遗物: %s" % relic.display_name
 
 		RogueEffectEntry.EffectType.ADD_BUFF:
-			var buff: BuffData = load(effect.target_resource_path)
-			if buff:
-				RogueBuffManager.add_buff(buff)
-				return "获得Buff: %s" % buff.display_name
+			## 旧的 buff 已迁移为遗物，走 ADD_RELIC 逻辑
+			var relic_compat: RelicData = load(effect.target_resource_path)
+			if relic_compat:
+				RogueBuffManager.add_relic(relic_compat)
+				return "获得遗物: %s" % relic_compat.display_name
 
 		RogueEffectEntry.EffectType.ADD_GOLD:
 			RogueState.add_gold(effect.param_int)
@@ -243,29 +247,47 @@ func _execute_effect(effect: Resource) -> String:
 			return "获得遗物: %s" % ", ".join(names) if not names.is_empty() else "没有可用的遗物"
 
 		RogueEffectEntry.EffectType.ADD_RANDOM_BUFF:
-			var all_buffs := _scan_resources("res://resources/buff/")
-			all_buffs.shuffle()
-			var count := mini(effect.param_int, all_buffs.size())
-			var names: PackedStringArray = []
-			for j in range(count):
-				var buff: BuffData = load(all_buffs[j])
-				if buff:
-					RogueBuffManager.add_buff(buff)
-					names.append(buff.display_name)
-			return "获得Buff: %s" % ", ".join(names) if not names.is_empty() else "没有可用的Buff"
+			## 已废弃，等同于 ADD_RANDOM_RELIC
+			var compat_relics := _scan_resources("res://resources/relics/")
+			compat_relics.shuffle()
+			var compat_count := mini(effect.param_int, compat_relics.size())
+			var compat_names: PackedStringArray = []
+			for j in range(compat_count):
+				var r: RelicData = load(compat_relics[j])
+				if r and not RogueBuffManager.has_relic(r.id):
+					RogueBuffManager.add_relic(r)
+					compat_names.append(r.display_name)
+			return "获得遗物: %s" % ", ".join(compat_names) if not compat_names.is_empty() else "没有可用的遗物"
+
+		RogueEffectEntry.EffectType.ADD_RANDOM_ENCHANT:
+			## 为随机卡牌添加随机附魔
+			var all_enchants := _scan_resources("res://resources/enchants/")
+			all_enchants.shuffle()
+			var deck_plants := RogueState.deck.keys()
+			if deck_plants.is_empty() or all_enchants.is_empty():
+				return "没有可附魔的卡牌"
+			var enchant_count := mini(effect.param_int, all_enchants.size())
+			var enchant_names: PackedStringArray = []
+			for j in range(enchant_count):
+				var enchant: BuffData = load(all_enchants[j])
+				if enchant:
+					var target_plant = deck_plants[randi() % deck_plants.size()]
+					RogueBuffManager.add_card_enchant(target_plant, enchant)
+					enchant_names.append(enchant.display_name)
+			return "获得附魔: %s" % ", ".join(enchant_names) if not enchant_names.is_empty() else "没有可用的附魔"
 
 		RogueEffectEntry.EffectType.CHANCE:
 			if randf() <= effect.param_float:
 				var texts: PackedStringArray = []
 				for sub in effect.sub_effects_success:
-					var t := _execute_effect(sub)
+					var t: String = await _execute_effect(sub)
 					if not t.is_empty():
 						texts.append(t)
 				return "成功! " + ", ".join(texts) if not texts.is_empty() else "成功!"
 			else:
 				var texts: PackedStringArray = []
 				for sub in effect.sub_effects_fail:
-					var t := _execute_effect(sub)
+					var t: String = await _execute_effect(sub)
 					if not t.is_empty():
 						texts.append(t)
 				return "失败... " + ", ".join(texts) if not texts.is_empty() else "失败..."
@@ -273,6 +295,22 @@ func _execute_effect(effect: Resource) -> String:
 		RogueEffectEntry.EffectType.CUSTOM:
 			if has_method(effect.param_string):
 				return call(effect.param_string)
+
+		RogueEffectEntry.EffectType.ADD_ENCHANT_PICK_TARGET:
+			var enchant_data: BuffData = load(effect.target_resource_path)
+			if not enchant_data:
+				return "附魔资源加载失败"
+			## 创建附魔目标选择界面
+			var picker_scene := preload("res://scenes/rogue/enchant_target_selection.tscn")
+			var picker: EnchantTargetSelection = picker_scene.instantiate()
+			var pick_count: int = effect.param_int if effect.param_int > 0 else 1
+			picker.setup(enchant_data, pick_count)
+			add_child(picker)
+			## 等待玩家选择
+			var selected_uids: Array = await picker.selection_completed
+			if selected_uids.is_empty():
+				return "取消了附魔"
+			return "已为 %d 张卡牌附魔: %s" % [selected_uids.size(), enchant_data.display_name]
 
 	return ""
 
@@ -284,8 +322,11 @@ func _execute_effect(effect: Resource) -> String:
 func _scan_resources(dir_path: String) -> Array[String]:
 	if dir_path.begins_with("res://resources/relics"):
 		return RELIC_PATHS.duplicate()
+	elif dir_path.begins_with("res://resources/enchants"):
+		return ENCHANT_PATHS.duplicate()
 	elif dir_path.begins_with("res://resources/buff"):
-		return BUFF_PATHS.duplicate()
+		## 旧的 buff 目录已迁移到 relics
+		return RELIC_PATHS.duplicate()
 	return []
 
 ## 从字符串解析 PlantType 枚举

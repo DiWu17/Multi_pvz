@@ -18,6 +18,17 @@ var _card_container: HBoxContainer
 ## 格式: {"id", "name", "description", "rarity", "_type": "relic"|"buff"|"deck", "_resource"?: Resource, "_deck_action"?: Callable}
 var _reward_pool: Array = []
 
+## 卡组奖励的植物池（随机卡牌奖励用）
+var plant_pool = [
+			CharacterRegistry.PlantType.P001PeaShooterSingle,
+			CharacterRegistry.PlantType.P002SunFlower,
+			CharacterRegistry.PlantType.P003CherryBomb,
+			CharacterRegistry.PlantType.P004WallNut,
+			CharacterRegistry.PlantType.P005PotatoMine,
+			CharacterRegistry.PlantType.P006SnowPea,
+			CharacterRegistry.PlantType.P007Chomper,
+		]
+
 ## 卡组奖励 (非资源型，硬编码)
 const DECK_REWARDS: Array = [
 	{"id": "extra_pea", "name": "额外豌豆", "description": "获得2张豌豆射手", "rarity": 0,
@@ -42,41 +53,10 @@ const RARITY_MAP := {
 }
 
 func _ready() -> void:
-	# Setup UI structure
-	var bg := ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.7)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
-
-	var vbox := VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_CENTER)
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	add_child(vbox)
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vbox.add_theme_constant_override("separation", 20)
-
-	var title := Label.new()
-	title.text = "选择奖励 (剩余 %d 次)" % _picks_remaining
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.name = "TitleLabel"
-	title.add_theme_font_size_override("font_size", 28)
-	title.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
-	vbox.add_child(title)
-
-	var center := CenterContainer.new()
-	vbox.add_child(center)
-
-	_card_container = HBoxContainer.new()
-	_card_container.add_theme_constant_override("separation", 20)
-	center.add_child(_card_container)
-
-	var skip_btn := Button.new()
-	skip_btn.text = "跳过"
-	skip_btn.pressed.connect(_on_skip)
-	skip_btn.custom_minimum_size = Vector2(120, 40)
-	var skip_center := CenterContainer.new()
-	skip_center.add_child(skip_btn)
-	vbox.add_child(skip_center)
+	_card_container = %CardContainer
+	var title_label: Label = %TitleLabel
+	title_label.text = "选择奖励 (剩余 %d 次)" % _picks_remaining
+	%SkipButton.pressed.connect(_on_skip)
 
 	_build_reward_pool()
 	_show_rewards()
@@ -101,18 +81,6 @@ func _build_reward_pool() -> void:
 				"_type": "relic", "_resource_path": path,
 			})
 
-	# 扫描 buff 资源
-	for path in _scan_tres("res://resources/buff/"):
-		var buff: BuffData = load(path)
-		if buff and not RogueBuffManager.has_buff(buff.id):
-			_reward_pool.append({
-				"id": buff.id, "name": buff.display_name,
-				"description": buff.description,
-				"icon": buff.icon,
-				"rarity": RARITY_MAP.get(buff.rarity, 0),
-				"_type": "buff", "_resource_path": path,
-			})
-
 	# 加入卡组奖励
 	_reward_pool.append_array(DECK_REWARDS)
 
@@ -130,7 +98,7 @@ func _on_card_selected(card: RoguelikeBuffCard) -> void:
 	_apply_reward(card.buff_data)
 	card.queue_free()
 	_picks_remaining -= 1
-	var title_label = find_child("TitleLabel")
+	var title_label: Label = %TitleLabel
 	if title_label:
 		title_label.text = "选择奖励 (剩余 %d 次)" % _picks_remaining
 	if _picks_remaining <= 0:
@@ -144,9 +112,10 @@ func _apply_reward(data: Dictionary) -> void:
 			if relic:
 				RogueBuffManager.add_relic(relic)
 		"buff":
-			var buff: BuffData = load(data["_resource_path"])
-			if buff:
-				RogueBuffManager.add_buff(buff)
+			## 旧的 buff 已迁移为遗物，兼容处理
+			var buff_as_relic: RelicData = load(data["_resource_path"])
+			if buff_as_relic:
+				RogueBuffManager.add_relic(buff_as_relic)
 		"deck":
 			_apply_deck_reward(data)
 
@@ -159,12 +128,6 @@ func _apply_deck_reward(data: Dictionary) -> void:
 	if data.has("_gold"):
 		RogueState.add_gold(data["_gold"])
 	if data.has("_random_plants"):
-		var plant_pool = [
-			CharacterRegistry.PlantType.P001PeaShooterSingle,
-			CharacterRegistry.PlantType.P002SunFlower,
-			CharacterRegistry.PlantType.P004WallNut,
-			CharacterRegistry.PlantType.P005PotatoMine,
-		]
 		for j in range(data["_random_plants"]):
 			RogueState.add_plant(plant_pool[randi() % plant_pool.size()])
 
