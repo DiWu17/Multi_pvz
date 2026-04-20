@@ -17,6 +17,7 @@ signal room_completed()
 const EVENT_PATHS: Array[String] = [
 	"res://resources/events/event_buff_selection.tres",
 	"res://resources/events/event_relic_selection.tres",
+	"res://resources/events/event_jungle_maze_adventure.tres",
 ]
 
 const RELIC_PATHS: Array[String] = [
@@ -41,6 +42,10 @@ var _event_pool: Array[RogueEventData] = []
 ## 本次 run 中各事件出现次数
 var _occurrence_counts: Dictionary = {}
 var _choice_made: bool = false
+
+## 链式选项流程相关
+var _current_options: Array[RogueEventOption] = [] # 当前显示的选项列表
+var _is_event_finished: bool = false # 是否已执行 CONTINUE effect
 
 # ══════════════════════════════════════════
 #  生命周期
@@ -131,13 +136,26 @@ func _display_event() -> void:
 	if _event.background_image and background:
 		background.texture = _event.background_image
 
+	# 重置链式流程状态
+	_choice_made = false
+	_is_event_finished = false
+	result_label.visible = false
+	continue_button.visible = false
+
+	# 显示初始选项
+	_display_options(_event.options)
+
+## 显示指定的选项集合（通用方法，支持链式）
+func _display_options(options: Array[RogueEventOption]) -> void:
+	_current_options = options
+
 	# 清除旧选项按钮
 	for child in choice_container.get_children():
 		child.queue_free()
 
 	# 动态生成选项按钮
-	for i in range(_event.options.size()):
-		var option: RogueEventOption = _event.options[i]
+	for i in range(options.size()):
+		var option: RogueEventOption = options[i]
 		var btn := Button.new()
 		btn.text = option.label
 		btn.tooltip_text = option.description
@@ -152,16 +170,18 @@ func _show_fallback() -> void:
 		description_label.text = "周围一切风平浪静，什么也没有发生。"
 	continue_button.visible = true
 
-# ══════════════════════════════════════════
-#  选项选择 & 效果执行
+## 选项选择 & 效果执行
 # ══════════════════════════════════════════
 
 func _on_option_selected(option_index: int) -> void:
-	if _choice_made:
+	if _choice_made or _is_event_finished:
 		return
 	_choice_made = true
 
-	var option: RogueEventOption = _event.options[option_index]
+	if option_index < 0 or option_index >= _current_options.size():
+		return
+
+	var option: RogueEventOption = _current_options[option_index]
 
 	# 隐藏所有选项
 	for child in choice_container.get_children():
@@ -170,15 +190,37 @@ func _on_option_selected(option_index: int) -> void:
 
 	# 执行效果
 	var result_text := option.label
+	var next_options: Array[RogueEventOption] = []
+	var title_update_text := ""
+	var desc_update_text := ""
+	
 	for effect in option.effects:
 		var effect_result: String = await _execute_effect(effect)
 		if not effect_result.is_empty():
 			result_text += "\n" + effect_result
+		
+		# 检查是否有 NEXT_OPTIONS effect
+		if effect.type == RogueEffectEntry.EffectType.NEXT_OPTIONS:
+			for sub_opt in effect.sub_options:
+				if sub_opt is RogueEventOption:
+					next_options.append(sub_opt)
+			# 记录标题和描述的更新文本
+			title_update_text = effect.title_update
+			desc_update_text = effect.description_update
 
 	if result_label:
 		result_label.text = result_text
 		result_label.visible = true
-	continue_button.visible = true
+
+	# 如果有下一步选项，更新标题/描述并显示它们
+	if not next_options.is_empty():
+		# 在显示新选项之前更新标题和描述
+		if not title_update_text.is_empty() and title_label:
+			title_label.text = title_update_text
+		if not desc_update_text.is_empty() and description_label:
+			description_label.text = desc_update_text
+		_choice_made = false # 允许选择下一步选项
+		_display_options(next_options)
 
 ## 执行单个效果条目，返回结果描述文本（支持 await）
 func _execute_effect(effect: Resource) -> String:
@@ -187,36 +229,35 @@ func _execute_effect(effect: Resource) -> String:
 			return ""
 
 		RogueEffectEntry.EffectType.ADD_RELIC:
+			# 从资源路径加载遗物并添加到玩家
 			var relic: RelicData = load(effect.target_resource_path)
 			if relic:
 				RogueBuffManager.add_relic(relic)
 				return "获得遗物: %s" % relic.display_name
 
-		RogueEffectEntry.EffectType.ADD_BUFF:
-			## 旧的 buff 已迁移为遗物，走 ADD_RELIC 逻辑
-			var relic_compat: RelicData = load(effect.target_resource_path)
-			if relic_compat:
-				RogueBuffManager.add_relic(relic_compat)
-				return "获得遗物: %s" % relic_compat.display_name
-
 		RogueEffectEntry.EffectType.ADD_GOLD:
-			RogueState.add_gold(effect.param_int)
+			# 根据参数随机获得或失去金币
+			var gold = randi_range(effect.param_int, effect.param_int+effect.param_range)
+			RogueState.add_gold(gold)
 			if effect.param_int >= 0:
-				return "获得 %d 金币" % effect.param_int
+				return "获得 %d 金币" % gold
 			else:
-				return "失去 %d 金币" % (-effect.param_int)
+				return "失去 %d 金币" % gold
 
 		RogueEffectEntry.EffectType.ADD_STARTING_SUN:
+			# 增加初始阳光，影响后续战斗的起始资源
 			RogueState.starting_sun += effect.param_int
 			return "初始阳光 +%d" % effect.param_int
 
 		RogueEffectEntry.EffectType.ADD_PLANT:
+			# 为玩家添加指定数量的植物卡（参数字符串为 PlantType 枚举名称）
 			var plant_type = _parse_plant_type(effect.param_string)
 			if plant_type != null:
 				RogueState.add_plant(plant_type, effect.param_int)
 				return "获得 %d 张植物卡" % effect.param_int
 
 		RogueEffectEntry.EffectType.REMOVE_PLANT:
+			# 从玩家牌组中移除指定数量的植物卡（参数字符串为 PlantType 枚举名称）
 			var plant_type = _parse_plant_type(effect.param_string)
 			if plant_type != null:
 				for j in range(effect.param_int):
@@ -224,18 +265,27 @@ func _execute_effect(effect: Resource) -> String:
 				return "移除 %d 张植物卡" % effect.param_int
 
 		RogueEffectEntry.EffectType.ADD_RANDOM_PLANT:
-			var plant_pool = [
-				CharacterRegistry.PlantType.P001PeaShooterSingle,
-				CharacterRegistry.PlantType.P002SunFlower,
-				CharacterRegistry.PlantType.P004WallNut,
-				CharacterRegistry.PlantType.P005PotatoMine,
-			]
+			# 从预设的植物池中随机添加指定数量的植物卡
+			var plant_pool = effect.plant_pool
+			if plant_pool.is_empty():
+				return "没有可用的植物卡"
 			for j in range(effect.param_int):
 				RogueState.add_plant(plant_pool[randi() % plant_pool.size()])
 			return "获得 %d 张随机植物卡" % effect.param_int
-
+		RogueEffectEntry.EffectType.REMOVE_RANDOM_PLANT:
+			# 从玩家牌组中随机移除指定数量的植物卡
+			var deck_plants = RogueState.deck.keys()
+			if deck_plants.is_empty():
+				return "没有植物卡可供移除"
+			for j in range(effect.param_int):
+				var plant_to_remove = deck_plants[randi() % deck_plants.size()]
+				RogueState.consume_plant(plant_to_remove)
+			return "随机移除 %d 张植物卡" % effect.param_int
 		RogueEffectEntry.EffectType.ADD_RANDOM_RELIC:
-			var all_relics := _scan_resources("res://resources/relics/")
+			# 从预设的遗物池中随机添加指定数量的遗物
+			var all_relics = effect.relic_pool
+			if all_relics.is_empty():
+				return "没有可用的遗物"
 			all_relics.shuffle()
 			var count := mini(effect.param_int, all_relics.size())
 			var names: PackedStringArray = []
@@ -245,19 +295,6 @@ func _execute_effect(effect: Resource) -> String:
 					RogueBuffManager.add_relic(relic)
 					names.append(relic.display_name)
 			return "获得遗物: %s" % ", ".join(names) if not names.is_empty() else "没有可用的遗物"
-
-		RogueEffectEntry.EffectType.ADD_RANDOM_BUFF:
-			## 已废弃，等同于 ADD_RANDOM_RELIC
-			var compat_relics := _scan_resources("res://resources/relics/")
-			compat_relics.shuffle()
-			var compat_count := mini(effect.param_int, compat_relics.size())
-			var compat_names: PackedStringArray = []
-			for j in range(compat_count):
-				var r: RelicData = load(compat_relics[j])
-				if r and not RogueBuffManager.has_relic(r.id):
-					RogueBuffManager.add_relic(r)
-					compat_names.append(r.display_name)
-			return "获得遗物: %s" % ", ".join(compat_names) if not compat_names.is_empty() else "没有可用的遗物"
 
 		RogueEffectEntry.EffectType.ADD_RANDOM_ENCHANT:
 			## 为随机卡牌添加随机附魔
@@ -277,6 +314,7 @@ func _execute_effect(effect: Resource) -> String:
 			return "获得附魔: %s" % ", ".join(enchant_names) if not enchant_names.is_empty() else "没有可用的附魔"
 
 		RogueEffectEntry.EffectType.CHANCE:
+			# 根据 param_float 的概率执行成功或失败的子效果组
 			if randf() <= effect.param_float:
 				var texts: PackedStringArray = []
 				for sub in effect.sub_effects_success:
@@ -293,10 +331,12 @@ func _execute_effect(effect: Resource) -> String:
 				return "失败... " + ", ".join(texts) if not texts.is_empty() else "失败..."
 
 		RogueEffectEntry.EffectType.CUSTOM:
+			# 调用自定义方法（由事件房间实现，方法名在 param_string 中指定）
 			if has_method(effect.param_string):
 				return call(effect.param_string)
-
+		
 		RogueEffectEntry.EffectType.ADD_ENCHANT_PICK_TARGET:
+			## 弹出附魔目标选择界面，玩家选择后再添加附魔
 			var enchant_data: BuffData = load(effect.target_resource_path)
 			if not enchant_data:
 				return "附魔资源加载失败"
@@ -311,6 +351,16 @@ func _execute_effect(effect: Resource) -> String:
 			if selected_uids.is_empty():
 				return "取消了附魔"
 			return "已为 %d 张卡牌附魔: %s" % [selected_uids.size(), enchant_data.display_name]
+
+		RogueEffectEntry.EffectType.NEXT_OPTIONS:
+			# 显示下一组选项 - 此处不返回文本，由 _on_option_selected 直接处理
+			return ""
+
+		RogueEffectEntry.EffectType.CONTINUE:
+			# 标记事件已完成，显示"继续"按钮
+			_is_event_finished = true
+			continue_button.visible = true
+			return ""
 
 	return ""
 
@@ -339,4 +389,5 @@ func _parse_plant_type(type_name: String) -> Variant:
 	return null
 
 func _on_continue_pressed() -> void:
-	room_completed.emit()
+	if _is_event_finished:
+		room_completed.emit()

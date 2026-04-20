@@ -6,6 +6,7 @@
 script = ExtResource("1_f6quq")
 black_dirs = ["addons", "res://addons"]
 script_list_meta = {
+"res://scenes/start_menu/network_mode_selector.gd": [-1, -1],
 "res://scenes/test/test.gd": [-1, -1],
 "res://scripts/Almanac/almanac_zombie_card.gd": [-1, -1],
 "res://scripts/Almanac/main_almanac.gd": [-1, -1],

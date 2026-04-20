@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="RogueEventData" format=3 uid="uid://bvjcrqsofwcxp"]
+
+[ext_resource type="Texture2D" uid="uid://ch62cr55uiux2" path="res://assets/image/events/jungle_maze_adventure.png" id="1_idw67"]
+[ext_resource type="Script" uid="uid://bbnxg8jy3qlgw" path="res://scripts/resources/rogue_event_option.gd" id="2_7j6lx"]
+[ext_resource type="Script" uid="uid://moeco3vc1jqo" path="res://scripts/resources/rogue_effect_entry.gd" id="3_4g1v5"]
+[ext_resource type="Script" uid="uid://b00ikvc3cacii" path="res://scripts/resources/rogue_event_data.gd" id="4_nmth1"]
+
+[sub_resource type="Resource" id="effect_1"]
+script = ExtResource("3_4g1v5")
+type = 2
+param_int = 35
+param_range = 30
+
+[sub_resource type="Resource" id="effect_continue"]
+script = ExtResource("3_4g1v5")
+type = 14
+
+[sub_resource type="Resource" id="option_1"]
+script = ExtResource("2_7j6lx")
+label = "结伴同行"
+description = "获得35-65金币"
+effects = Array[ExtResource("3_4g1v5")]([SubResource("effect_1"), SubResource("effect_continue")])
+
+[sub_resource type="Resource" id="effect_2"]
+script = ExtResource("3_4g1v5")
+type = 2
+param_int = 135
+param_range = 30
+
+[sub_resource type="Resource" id="option_2"]
+script = ExtResource("2_7j6lx")
+label = "独自挑战"
+description = "获得135-165金币。随机失去一个小推车"
+effects = Array[ExtResource("3_4g1v5")]([SubResource("effect_2"), SubResource("effect_continue")])
+
+[resource]
+script = ExtResource("4_nmth1")
+id = &"enchant_selection"
+title = "丛林迷宫奇遇"
+description = "在一片花园的空地上，你撞见了一群寒碜的植物小队，他们正俯瞰着一座巨型迷宫并指手画脚。
+他们邀请你入伙，共同开启一场搜刮迷宫财富的史诗级任务。身为老手，你心知肚明这迷宫里塞满了致命陷阱和僵尸。
+搭伙干活确实容易些，但那样你就得跟人平分战利品了。"
+background_image = ExtResource("1_idw67")
+options = Array[ExtResource("2_7j6lx")]([SubResource("option_1"), SubResource("option_2")])
+weight = 100
+max_occurrences = -1

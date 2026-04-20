@@ -162,20 +162,6 @@ func get_card_enchants(plant_type) -> Array:
 func get_all_enchants() -> Dictionary:
 	return _card_instance_enchants
 
-## ─── Buff 兼容 API (桥接旧代码，实际已迁移) ───
-
-func add_buff(buff: BuffData) -> void:
-	push_warning("[RogueBuffManager] add_buff() 已废弃，请使用 add_card_enchant() 或 add_relic()")
-
-func remove_buff(buff_id: StringName) -> void:
-	push_warning("[RogueBuffManager] remove_buff() 已废弃")
-
-func has_buff(buff_id: StringName) -> bool:
-	return false
-
-func get_buffs() -> Array[BuffData]:
-	return []
-
 # ══════════════════════════════════════════
 #  效果查询 API — 游戏系统调用这些方法获取聚合值
 # ══════════════════════════════════════════

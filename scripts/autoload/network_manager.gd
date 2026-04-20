@@ -1,6 +1,7 @@
 extends Node
 ## 网络连接管理器 autoload
 ## 负责：创建/加入房间、玩家注册、断线处理、RPC 转发
+## 支持模式：ENet直连 | 中继服务器 | WebRTC
 
 #region 信号
 ## 玩家加入
@@ -25,6 +26,8 @@ signal game_started
 signal player_list_updated
 ## 中继房间创建成功（返回房间码）
 signal relay_room_created(room_code: String)
+## WebRTC房间创建成功（返回房间码）
+signal webrtc_room_created(room_code: String)
 ## 种植成功信号（在_execute_plant成功后发出）
 signal plant_success_confirmed(plant_type: int, row: int, col: int, owner_id: int)
 ## 种植被拒绝信号（阳光不足等原因）
@@ -37,6 +40,22 @@ const MAX_PLAYERS := 4
 const NET_PROBE_INTERVAL := 1.0
 const NET_PROBE_WINDOW_SIZE := 20
 const NET_PROBE_TIMEOUT_MS := 2500
+
+# WebRTC 常量
+const DEFAULT_WEBRTC_SIGNALING_URL := "ws://localhost:8080"
+const WEBRTC_ICE_SERVERS := [
+	{"urls": ["stun:stun.l.google.com:19302"]},
+	{"urls": ["stun:stun1.l.google.com:19302"]},
+	{"urls": ["stun:stun2.l.google.com:19302"]},
+]
+#endregion
+
+#region 枚举
+enum NetworkMode {
+	ENET,          ## ENet 直连
+	RELAY,         ## Godot 中继服务器
+	WEBRTC,        ## WebRTC 点对点
+}
 #endregion
 
 #region 玩家数据
@@ -54,6 +73,8 @@ var players: Dictionary = {}
 var local_player_name: String = "Player"
 ## 是否为多人游戏模式
 var is_multiplayer: bool = false
+## 当前网络模式
+var current_network_mode: NetworkMode = NetworkMode.ENET
 ## 当前玩家数量
 var player_count: int:
 	get:
@@ -77,8 +98,33 @@ enum LobbyState {
 var lobby_state: LobbyState = LobbyState.IDLE
 ## 中继房间码（中继模式下有效）
 var relay_room_code: String = ""
+## WebRTC房间码（WebRTC模式下有效）
+var webrtc_room_code: String = ""
 ## 多人模式选择的游戏模式（选关场景）
 var selected_game_mode: MainSceneRegistry.MainScenes = MainSceneRegistry.MainScenes.ChooseLevelAdventure
+#endregion
+
+#region WebRTC 状态
+## WebRTC 多人对等体
+var _webrtc_peer: WebRTCMultiplayerPeer = null
+## WebRTC 信令服务器连接
+var _webrtc_signal_websocket: WebSocketPeer = null
+## WebRTC ICE 服务器配置
+var _webrtc_ice_servers := WEBRTC_ICE_SERVERS
+## WebRTC 对等连接 {peer_id: WebRTCPeerConnection}
+var _webrtc_connections: Dictionary = {}
+## WebRTC 房间 ID
+var _webrtc_room_id: String = ""
+## WebRTC 本地 peer_id（客户端加入房间后由信令服务器分配）
+var _webrtc_local_peer_id: int = 0
+## 待发送的初始化消息
+var _webrtc_pending_init_msg: Dictionary = {}
+## 最近一次网络错误描述
+var _last_network_error_message: String = ""
+## WebRTC 可用性探测缓存
+var _webrtc_support_checked: bool = false
+var _webrtc_supported: bool = false
+var _webrtc_support_error_message: String = ""
 #endregion
 
 func _ready() -> void:
@@ -93,6 +139,12 @@ func _ready() -> void:
 	_net_probe_timer.autostart = true
 	_net_probe_timer.timeout.connect(_on_net_probe_timer_timeout)
 	add_child(_net_probe_timer)
+
+func _process(_delta: float) -> void:
+	# 处理 WebRTC 信令消息
+	if current_network_mode == NetworkMode.WEBRTC:
+		_process_webrtc_signal()
+		_process_webrtc_connections()
 
 #region 连接管理
 ## 创建房间（Host）
@@ -194,11 +246,491 @@ func disconnect_from_server() -> void:
 	if multiplayer.multiplayer_peer:
 		multiplayer.multiplayer_peer.close()
 		multiplayer.multiplayer_peer = null
+	_cleanup_webrtc()
 	players.clear()
 	is_multiplayer = false
+	current_network_mode = NetworkMode.ENET
 	lobby_state = LobbyState.IDLE
 	relay_room_code = ""
+	webrtc_room_code = ""
 	print("NetworkManager: 已断开连接")
+
+#endregion
+
+#region WebRTC 连接管理
+## 通过WebRTC创建房间（Host）
+func create_webrtc_host(signaling_url: String = DEFAULT_WEBRTC_SIGNALING_URL, player_name: String = "Host") -> Error:
+	print("[WebRTC Host] 开始创建房间，URL: %s, 玩家名: %s" % [signaling_url, player_name])
+	var support_error := _ensure_webrtc_available()
+	if support_error != OK:
+		return support_error
+	_reset_net_stats()
+	local_player_name = player_name
+	current_network_mode = NetworkMode.WEBRTC
+	_webrtc_local_peer_id = 1
+	print("[WebRTC Host] 设置网络模式为: WEBRTC (值: %d)" % current_network_mode)
+	print("[WebRTC Host] 验证网络模式: current_network_mode == NetworkMode.WEBRTC? %s" % (current_network_mode == NetworkMode.WEBRTC))
+	print("[WebRTC Host] NetworkMode.WEBRTC = %d" % NetworkMode.WEBRTC)
+	
+	_webrtc_peer = WebRTCMultiplayerPeer.new()
+	
+	# 作为服务器初始化（peer_id = 1）
+	var error = _webrtc_peer.create_server()
+	if error != OK:
+		push_error("NetworkManager: WebRTC 服务器创建失败，错误码: %d" % error)
+		return error
+	print("[WebRTC Host] WebRTC Peer 创建成功")
+	
+	multiplayer.multiplayer_peer = _webrtc_peer
+	is_multiplayer = true
+	lobby_state = LobbyState.IN_LOBBY
+	
+	# 连接信令服务器
+	error = _connect_webrtc_signaling(signaling_url, "create")
+	if error != OK:
+		return error
+	print("[WebRTC Host] 已连接到信令服务器")
+	
+	_register_player(1, {
+		"name": player_name,
+		"color_index": 0,
+		"is_ready": false,
+		"is_card_chosen": false,
+		"is_restart_voted": false,
+	})
+	
+	print("NetworkManager: WebRTC 服务器创建成功，连接到信令服务器: %s" % signaling_url)
+	return OK
+
+## 通过WebRTC加入房间（Client）
+func join_webrtc_room(signaling_url: String = DEFAULT_WEBRTC_SIGNALING_URL, room_code: String = "", player_name: String = "Player") -> Error:
+	var support_error := _ensure_webrtc_available()
+	if support_error != OK:
+		return support_error
+	_reset_net_stats()
+	local_player_name = player_name
+	webrtc_room_code = room_code
+	current_network_mode = NetworkMode.WEBRTC
+	_webrtc_local_peer_id = 0
+	is_multiplayer = true
+	lobby_state = LobbyState.IN_LOBBY
+	
+	# 连接信令服务器
+	var error = _connect_webrtc_signaling(signaling_url, "join", room_code)
+	if error != OK:
+		return error
+	
+	print("NetworkManager: 正在通过WebRTC加入房间 %s ..." % room_code)
+	return OK
+
+## 连接到WebRTC信令服务器 (同步连接)
+func _connect_webrtc_signaling(url: String, action: String, room_code: String = "") -> Error:
+	print("[WebRTC Signaling] 开始连接: action=%s, room_code=%s" % [action, room_code])
+	
+	# 清理旧的连接
+	if _webrtc_signal_websocket != null:
+		var ready_state = _webrtc_signal_websocket.get_ready_state()
+		print("[WebRTC Signaling] 旧连接状态: %d" % ready_state)
+		if ready_state != WebSocketPeer.STATE_CLOSED and ready_state != WebSocketPeer.STATE_CLOSING:
+			_webrtc_signal_websocket.close()
+			print("[WebRTC Signaling] 已关闭旧连接")
+		_webrtc_signal_websocket = null
+	
+	# 创建新的 WebSocket 连接
+	_webrtc_signal_websocket = WebSocketPeer.new()
+	print("[WebRTC Signaling] 创建新 WebSocket 对象")
+	
+	var error = _webrtc_signal_websocket.connect_to_url(url)
+	print("[WebRTC Signaling] connect_to_url 返回: %d" % error)
+	if error != OK:
+		push_error("NetworkManager: WebRTC 信令服务器连接失败，错误码: %d" % error)
+		return error
+	
+	# 保存待发送的初始化消息，在 _process_webrtc_signal 中发送
+	_webrtc_pending_init_msg = {
+		"action": action,
+		"player_name": local_player_name,
+		"room_code": room_code,
+		"max_players": MAX_PLAYERS,
+	}
+	print("[WebRTC Signaling] 已保存待发送消息: %s" % str(_webrtc_pending_init_msg))
+	
+	print("NetworkManager: WebRTC 信令服务器连接中: %s" % url)
+	return OK
+
+func _set_last_network_error(message: String) -> void:
+	_last_network_error_message = message
+
+func get_last_network_error() -> String:
+	return _last_network_error_message
+
+func is_webrtc_available() -> bool:
+	return _ensure_webrtc_available() == OK
+
+func get_webrtc_unavailable_reason() -> String:
+	if _ensure_webrtc_available() == OK:
+		return ""
+	return _webrtc_support_error_message
+
+func _ensure_webrtc_available() -> Error:
+	if _webrtc_support_checked:
+		if _webrtc_supported:
+			_set_last_network_error("")
+			return OK
+		_set_last_network_error(_webrtc_support_error_message)
+		return ERR_UNAVAILABLE
+
+	_webrtc_support_checked = true
+	_webrtc_supported = false
+	_webrtc_support_error_message = ""
+
+	var probe_peer := WebRTCMultiplayerPeer.new()
+	var create_mesh_error := probe_peer.create_mesh(1)
+	if create_mesh_error != OK:
+		_webrtc_support_error_message = "当前环境无法初始化 WebRTC mesh，可能缺少桌面端 WebRTC 原生扩展"
+		_set_last_network_error(_webrtc_support_error_message)
+		return ERR_UNAVAILABLE
+
+	var probe_connection := WebRTCPeerConnection.new()
+	var init_error := probe_connection.initialize({
+		"iceServers": _webrtc_ice_servers,
+	})
+	if init_error != OK:
+		probe_peer.close()
+		_webrtc_support_error_message = "当前环境无法初始化 WebRTC PeerConnection，可能缺少桌面端 WebRTC 原生扩展"
+		_set_last_network_error(_webrtc_support_error_message)
+		return ERR_UNAVAILABLE
+
+	var add_peer_error := probe_peer.add_peer(probe_connection, 2)
+	probe_connection.close()
+	probe_peer.close()
+	if add_peer_error != OK:
+		_webrtc_support_error_message = "当前桌面构建缺少 WebRTC 原生后端，无法建立点对点连接。请安装 Godot WebRTC GDExtension/原生插件，或改用服务器中转模式"
+		_set_last_network_error(_webrtc_support_error_message)
+		return ERR_UNAVAILABLE
+
+	_webrtc_supported = true
+	_webrtc_support_error_message = ""
+	_set_last_network_error("")
+	return OK
+
+func _create_webrtc_client_peer(peer_id: int) -> Error:
+	if peer_id <= 1:
+		return ERR_INVALID_PARAMETER
+	if _webrtc_peer != null:
+		return OK
+
+	_webrtc_peer = WebRTCMultiplayerPeer.new()
+	var error = _webrtc_peer.create_client(peer_id)
+	if error != OK:
+		push_error("NetworkManager: WebRTC 客户端创建失败，错误码: %d" % error)
+		_webrtc_peer = null
+		return error
+
+	multiplayer.multiplayer_peer = _webrtc_peer
+	return OK
+
+func _process_webrtc_connections() -> void:
+	for peer_id in _webrtc_connections.keys():
+		var connection: WebRTCPeerConnection = _webrtc_connections[peer_id]
+		if connection != null:
+			connection.poll()
+
+func _should_create_webrtc_offer(remote_peer_id: int) -> bool:
+	if _webrtc_local_peer_id <= 0:
+		return false
+	return _webrtc_local_peer_id < remote_peer_id
+
+func _create_webrtc_connection(peer_id: int, create_offer: bool) -> Error:
+	print("[WebRTC] 尝试创建对等连接: local=%d remote=%d create_offer=%s has_peer=%s peer_ready=%s" % [
+		_webrtc_local_peer_id,
+		peer_id,
+		create_offer,
+		_webrtc_connections.has(peer_id),
+		_webrtc_peer != null,
+	])
+	if peer_id <= 0:
+		print("[WebRTC] 跳过创建连接: 非法 peer_id=%d" % peer_id)
+		return ERR_INVALID_PARAMETER
+	if peer_id == _webrtc_local_peer_id:
+		print("[WebRTC] 跳过创建连接: remote peer 等于 local peer (%d)" % peer_id)
+		return OK
+	if _webrtc_connections.has(peer_id):
+		print("[WebRTC] 跳过创建连接: peer %d 已存在连接" % peer_id)
+		return OK
+	if _webrtc_peer == null:
+		print("[WebRTC] 创建连接失败: _webrtc_peer 为空, local=%d remote=%d" % [_webrtc_local_peer_id, peer_id])
+		push_warning("NetworkManager: WebRTC multiplayer peer 尚未初始化，无法创建 peer %d 的连接" % peer_id)
+		return ERR_UNCONFIGURED
+
+	var connection := WebRTCPeerConnection.new()
+	var error := connection.initialize({
+		"iceServers": _webrtc_ice_servers,
+	})
+	if error != OK:
+		print("[WebRTC] PeerConnection initialize 失败: peer=%d error=%d" % [peer_id, error])
+		push_error("NetworkManager: WebRTC PeerConnection 初始化失败，peer=%d 错误码=%d" % [peer_id, error])
+		return error
+
+	connection.session_description_created.connect(_on_webrtc_session_description_created.bind(peer_id))
+	connection.ice_candidate_created.connect(_on_webrtc_ice_candidate_created.bind(peer_id))
+
+	error = _webrtc_peer.add_peer(connection, peer_id)
+	if error != OK:
+		print("[WebRTC] add_peer 失败: peer=%d error=%d" % [peer_id, error])
+		_set_last_network_error("WebRTC add_peer 失败。当前环境可能缺少桌面端 WebRTC 原生后端")
+		push_error("NetworkManager: WebRTC add_peer 失败，peer=%d 错误码=%d" % [peer_id, error])
+		connection.close()
+		return error
+
+	_webrtc_connections[peer_id] = connection
+	print("[WebRTC] 已创建对等连接 peer_id=%d, create_offer=%s" % [peer_id, create_offer])
+
+	if create_offer:
+		print("[WebRTC] 开始为 peer %d 创建 offer (local=%d)" % [peer_id, _webrtc_local_peer_id])
+		error = connection.create_offer()
+		if error != OK:
+			push_error("NetworkManager: WebRTC create_offer 失败，peer=%d 错误码=%d" % [peer_id, error])
+			_remove_webrtc_connection(peer_id)
+			return error
+
+	return OK
+
+func _remove_webrtc_connection(peer_id: int) -> void:
+	if not _webrtc_connections.has(peer_id):
+		return
+	var connection: WebRTCPeerConnection = _webrtc_connections[peer_id]
+	if connection != null:
+		connection.close()
+	_webrtc_connections.erase(peer_id)
+
+func _send_webrtc_signal(message: Dictionary) -> void:
+	if _webrtc_signal_websocket == null:
+		push_warning("NetworkManager: WebRTC 信令发送失败，WebSocket 不存在")
+		return
+	if _webrtc_signal_websocket.get_ready_state() != WebSocketPeer.STATE_OPEN:
+		push_warning("NetworkManager: WebRTC 信令发送失败，WebSocket 未打开")
+		return
+	var text := JSON.stringify(message)
+	print("[WebRTC Signal] 发送消息: %s" % text)
+	_webrtc_signal_websocket.send_text(text)
+
+func _on_webrtc_session_description_created(type: String, sdp: String, peer_id: int) -> void:
+	if not _webrtc_connections.has(peer_id):
+		return
+	var connection: WebRTCPeerConnection = _webrtc_connections[peer_id]
+	print("[WebRTC] session_description_created: type=%s peer=%d" % [type, peer_id])
+	var error := connection.set_local_description(type, sdp)
+	if error != OK:
+		push_error("NetworkManager: WebRTC set_local_description 失败，peer=%d type=%s 错误码=%d" % [peer_id, type, error])
+		return
+
+	match type:
+		"offer":
+			_send_webrtc_signal({
+				"type": "peer_offer",
+				"to_id": peer_id,
+				"offer": sdp,
+			})
+		"answer":
+			_send_webrtc_signal({
+				"type": "peer_answer",
+				"to_id": peer_id,
+				"answer": sdp,
+			})
+
+func _on_webrtc_ice_candidate_created(media: String, index: int, name: String, peer_id: int) -> void:
+	if not _webrtc_connections.has(peer_id):
+		return
+	_send_webrtc_signal({
+		"type": "ice_candidate",
+		"to_id": peer_id,
+		"candidate": name,
+		"sdp_mid": media,
+		"sdp_mline_index": index,
+	})
+
+## 清理 WebRTC 资源
+func _cleanup_webrtc() -> void:
+	if multiplayer.multiplayer_peer == _webrtc_peer:
+		multiplayer.multiplayer_peer = null
+
+	for peer_id in _webrtc_connections.keys():
+		var connection: WebRTCPeerConnection = _webrtc_connections[peer_id]
+		if connection != null:
+			connection.close()
+	_webrtc_connections.clear()
+
+	if _webrtc_peer != null:
+		_webrtc_peer.close()
+		_webrtc_peer = null
+	
+	if _webrtc_signal_websocket != null:
+		if _webrtc_signal_websocket.get_ready_state() in [WebSocketPeer.STATE_OPEN, WebSocketPeer.STATE_CONNECTING]:
+			_webrtc_signal_websocket.close()
+		_webrtc_signal_websocket = null
+	
+	_webrtc_room_id = ""
+	_webrtc_local_peer_id = 0
+	_webrtc_pending_init_msg.clear()
+
+## 处理WebRTC信令消息
+func _process_webrtc_signal() -> void:
+	if _webrtc_signal_websocket == null:
+		print("[WebRTC Signal] WebSocket 为 null")
+		return
+	
+	var ready_state = _webrtc_signal_websocket.get_ready_state()
+	
+	# 必须在每个状态都调用 poll() 来推进连接
+	_webrtc_signal_websocket.poll()
+	
+	# 重新获取状态，可能已经改变
+	ready_state = _webrtc_signal_websocket.get_ready_state()
+	
+	# 调试：打印状态 (CLOSED=0, CONNECTING=1, OPEN=2, CLOSING=3)
+	# if ready_state == WebSocketPeer.STATE_CONNECTING:
+	# 	print("[WebRTC Signal] 状态: STATE_CONNECTING (1) - 有待发送消息: %s" % (_webrtc_pending_init_msg.size() > 0))
+	# elif ready_state == WebSocketPeer.STATE_OPEN:
+	# 	print("[WebRTC Signal] 状态: STATE_OPEN (2) - 有待发送消息: %s" % (_webrtc_pending_init_msg.size() > 0))
+	# elif ready_state == WebSocketPeer.STATE_CLOSED:
+	# 	print("[WebRTC Signal] 状态: STATE_CLOSED (0)")
+	
+	# 如果连接刚打开且有待发送的初始化消息，发送它
+	if ready_state == WebSocketPeer.STATE_OPEN and _webrtc_pending_init_msg.size() > 0:
+		var msg_str = JSON.stringify(_webrtc_pending_init_msg)
+		print("[WebRTC Signal] 发送初始化消息: %s" % msg_str)
+		_webrtc_signal_websocket.send_text(msg_str)
+		_webrtc_pending_init_msg.clear()
+	
+	if ready_state == WebSocketPeer.STATE_CONNECTING:
+		return
+	
+	if ready_state != WebSocketPeer.STATE_OPEN:
+		if ready_state == WebSocketPeer.STATE_CLOSED and _webrtc_pending_init_msg.size() == 0:
+			# 连接已关闭，不需要反复报错
+			pass
+		return
+	
+	# 只在 OPEN 状态下处理接收的数据
+	var packet_count = _webrtc_signal_websocket.get_available_packet_count()
+	if packet_count > 0:
+		print("[WebRTC Signal] 有 %d 个待接收的数据包" % packet_count)
+	
+	while _webrtc_signal_websocket.get_available_packet_count():
+		var packet := _webrtc_signal_websocket.get_packet()
+		var text := packet.get_string_from_utf8()
+		print("[WebRTC Signal] 接收消息: %s" % text)
+		var json = JSON.parse_string(text)
+		if json is Dictionary:
+			_on_webrtc_signal_message(json)
+		else:
+			print("[WebRTC Signal] JSON 解析失败: %s" % text)
+
+## 处理来自信令服务器的消息
+func _on_webrtc_signal_message(msg: Dictionary) -> void:
+	var msg_type: String = msg.get("type", "")
+	
+	print("NetworkManager: 处理 WebRTC 消息，类型: ", msg_type)
+	
+	match msg_type:
+		"room_created":
+			webrtc_room_code = msg.get("room_code", "")
+			_webrtc_room_id = msg.get("room_id", "")
+			_webrtc_local_peer_id = int(msg.get("peer_id", 1))
+			print("NetworkManager: 房间码已设置: %s，发射信号" % webrtc_room_code)
+			webrtc_room_created.emit(webrtc_room_code)
+			print("NetworkManager: WebRTC 房间创建成功，房间码: %s" % webrtc_room_code)
+		
+		"room_joined":
+			webrtc_room_code = msg.get("room_code", "")
+			_webrtc_room_id = msg.get("room_id", "")
+			_webrtc_local_peer_id = int(msg.get("peer_id", 0))
+			print("[WebRTC] room_joined: local_peer_id=%d" % _webrtc_local_peer_id)
+			var create_client_error := _create_webrtc_client_peer(_webrtc_local_peer_id)
+			if create_client_error != OK:
+				_on_connection_failed()
+				return
+			var room_players: Array = msg.get("players", [])
+			for player_data in room_players:
+				if player_data is Dictionary:
+					var peer_id := int(player_data.get("peer_id", -1))
+					if peer_id > 0 and peer_id != _webrtc_local_peer_id:
+						_create_webrtc_connection(peer_id, _should_create_webrtc_offer(peer_id))
+			print("NetworkManager: WebRTC 加入房间成功，房间码: %s" % webrtc_room_code)
+		
+		"existing_player":
+			var peer_id: int = msg.get("peer_id", -1)
+			if peer_id > 0 and peer_id != _webrtc_local_peer_id:
+				print("[WebRTC] existing_player: local=%d remote=%d" % [_webrtc_local_peer_id, peer_id])
+				_create_webrtc_connection(peer_id, _should_create_webrtc_offer(peer_id))
+		
+		"player_joined":
+			var peer_id: int = msg.get("peer_id", -1)
+			if peer_id > 0 and peer_id != _webrtc_local_peer_id:
+				print("[WebRTC] player_joined: local=%d remote=%d" % [_webrtc_local_peer_id, peer_id])
+				_create_webrtc_connection(peer_id, _should_create_webrtc_offer(peer_id))
+
+		"peer_offer":
+			var from_id: int = msg.get("from_id", -1)
+			var offer: String = msg.get("offer", "")
+			if from_id > 0:
+				print("[WebRTC] 收到 peer_offer: from=%d to=%d" % [from_id, _webrtc_local_peer_id])
+				var create_offer_peer_error := _create_webrtc_connection(from_id, false)
+				if create_offer_peer_error != OK:
+					return
+				if _webrtc_connections.has(from_id):
+					var offer_conn: WebRTCPeerConnection = _webrtc_connections[from_id]
+					var offer_error := offer_conn.set_remote_description("offer", offer)
+					if offer_error != OK:
+						push_error("NetworkManager: WebRTC set_remote_description(offer) 失败，peer=%d 错误码=%d" % [from_id, offer_error])
+						return
+					var answer_create_error: int = offer_conn.create_answer()
+					if answer_create_error != OK:
+						push_error("NetworkManager: WebRTC create_answer 失败，peer=%d 错误码=%d" % [from_id, answer_create_error])
+
+		"peer_answer":
+			var from_id: int = msg.get("from_id", -1)
+			var answer: String = msg.get("answer", "")
+			if from_id > 0 and _webrtc_connections.has(from_id):
+				print("[WebRTC] 收到 peer_answer: from=%d to=%d" % [from_id, _webrtc_local_peer_id])
+				var answer_conn: WebRTCPeerConnection = _webrtc_connections[from_id]
+				var answer_error := answer_conn.set_remote_description("answer", answer)
+				if answer_error != OK:
+					push_error("NetworkManager: WebRTC set_remote_description(answer) 失败，peer=%d 错误码=%d" % [from_id, answer_error])
+
+		"ice_candidate":
+			var from_id: int = msg.get("from_id", -1)
+			if from_id > 0 and _webrtc_connections.has(from_id):
+				print("[WebRTC] 收到 ice_candidate: from=%d to=%d" % [from_id, _webrtc_local_peer_id])
+				var ice_conn: WebRTCPeerConnection = _webrtc_connections[from_id]
+				var ice_error := ice_conn.add_ice_candidate(
+					msg.get("sdp_mid", ""),
+					int(msg.get("sdp_mline_index", 0)),
+					msg.get("candidate", "")
+				)
+				if ice_error != OK:
+					push_error("NetworkManager: WebRTC add_ice_candidate 失败，peer=%d 错误码=%d" % [from_id, ice_error])
+		
+		"player_left":
+			var peer_id: int = msg.get("peer_id", -1)
+			if peer_id > 0:
+				_remove_webrtc_connection(peer_id)
+				_on_peer_disconnected(peer_id)
+		
+		"error":
+			# 错误消息
+			var error_msg: String = msg.get("message", "Unknown error")
+			print("NetworkManager: WebRTC 错误: %s" % error_msg)
+			_on_connection_failed()
+
+		"room_closed":
+			var close_msg: String = msg.get("message", "房间已关闭")
+			print("NetworkManager: WebRTC 房间关闭: %s" % close_msg)
+			disconnect_from_server()
+			server_disconnected.emit()
+
+#endregion
 #endregion
 
 #region 连接回调
@@ -207,6 +739,8 @@ func _on_peer_connected(peer_id: int) -> void:
 
 func _on_peer_disconnected(peer_id: int) -> void:
 	GameLogger.log_net("玩家断开 peer_id=%d" % peer_id)
+	if current_network_mode == NetworkMode.WEBRTC:
+		_remove_webrtc_connection(peer_id)
 	var player_name := "未知玩家"
 	if players.has(peer_id) and players[peer_id].has("name"):
 		player_name = players[peer_id]["name"]
@@ -235,15 +769,20 @@ func _on_connected_to_server() -> void:
 func _on_connection_failed() -> void:
 	GameLogger.error("连接失败")
 	_reset_net_stats()
+	_cleanup_webrtc()
+	players.clear()
 	is_multiplayer = false
+	current_network_mode = NetworkMode.ENET
 	lobby_state = LobbyState.IDLE
 	connection_failed.emit()
 
 func _on_server_disconnected() -> void:
 	GameLogger.error("服务器断开")
 	_reset_net_stats()
+	_cleanup_webrtc()
 	players.clear()
 	is_multiplayer = false
+	current_network_mode = NetworkMode.ENET
 	lobby_state = LobbyState.IDLE
 	server_disconnected.emit()
 #endregion

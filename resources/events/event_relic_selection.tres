@@ -10,11 +10,15 @@ script = ExtResource("3")
 type = 1
 target_resource_path = "res://resources/relics/gremlin_horn.tres"
 
+[sub_resource type="Resource" id="effect_continue"]
+script = ExtResource("3")
+type = 14
+
 [sub_resource type="Resource" id="option_1"]
 script = ExtResource("2")
 label = "选择贪婪号角"
 description = "获得遗物: 杀死敌人后获得10点阳光"
-effects = Array[ExtResource("3")]([SubResource("effect_1")])
+effects = Array[ExtResource("3")]([SubResource("effect_1"), SubResource("effect_continue")])
 
 [sub_resource type="Resource" id="effect_2"]
 script = ExtResource("3")
@@ -25,7 +29,7 @@ target_resource_path = "res://resources/relics/happy_flower.tres"
 script = ExtResource("2")
 label = "选择开心小花"
 description = "获得遗物: 产出阳光+20%"
-effects = Array[ExtResource("3")]([SubResource("effect_2")])
+effects = Array[ExtResource("3")]([SubResource("effect_2"), SubResource("effect_continue")])
 
 [sub_resource type="Resource" id="effect_3"]
 script = ExtResource("3")
@@ -36,7 +40,7 @@ target_resource_path = "res://resources/relics/vajra.tres"
 script = ExtResource("2")
 label = "选择金刚杵"
 description = "获得遗物: 植物攻击力+10%"
-effects = Array[ExtResource("3")]([SubResource("effect_3")])
+effects = Array[ExtResource("3")]([SubResource("effect_3"), SubResource("effect_continue")])
 
 [resource]
 script = ExtResource("1")

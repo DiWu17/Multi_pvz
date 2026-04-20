@@ -7,39 +7,60 @@
 
 [sub_resource type="Resource" id="effect_1"]
 script = ExtResource("3")
-type = 13
-target_resource_path = "res://resources/enchants/pumpkin.tres"
+type = 12
 param_int = 1
+target_resource_path = "res://resources/enchants/pumpkin.tres"
+
+[sub_resource type="Resource" id="effect_continue"]
+script = ExtResource("3")
+type = 14
 
 [sub_resource type="Resource" id="option_1"]
 script = ExtResource("2")
 label = "南瓜灯附魔"
 description = "选择一张卡牌，为其附魔南瓜灯保护"
-effects = Array[ExtResource("3")]([SubResource("effect_1")])
+effects = Array[ExtResource("3")]([SubResource("effect_1"), SubResource("effect_continue")])
 
-[sub_resource type="Resource" id="effect_2"]
+[sub_resource type="Resource" id="effect_enchant_pick"]
+script = ExtResource("3")
+type = 12
+param_int = 1
+target_resource_path = "res://resources/enchants/inherent.tres"
+
+[sub_resource type="Resource" id="Resource_17als"]
+script = ExtResource("3")
+type = 14
+
+[sub_resource type="Resource" id="option_continue"]
+script = ExtResource("2")
+label = "继续"
+description = "继续冒险"
+effects = Array[ExtResource("3")]([SubResource("Resource_17als")])
+
+[sub_resource type="Resource" id="effect_next_options"]
 script = ExtResource("3")
 type = 13
-target_resource_path = "res://resources/enchants/inherent.tres"
-param_int = 1
+sub_options = Array[ExtResource("2")]([SubResource("option_continue")])
+title_update = "哇哇肉！"
+description_update = "你成功获得了固有附魔！"
 
 [sub_resource type="Resource" id="option_2"]
 script = ExtResource("2")
 label = "固有附魔"
 description = "选择一张卡牌，使其在每轮开始时立即出现"
-effects = Array[ExtResource("3")]([SubResource("effect_2")])
+effects = Array[ExtResource("3")]([SubResource("effect_enchant_pick"), SubResource("effect_next_options")])
 
 [sub_resource type="Resource" id="effect_3"]
 script = ExtResource("3")
-type = 13
-target_resource_path = "res://resources/enchants/consumable.tres"
+type = 12
 param_int = 1
+target_resource_path = "res://resources/enchants/consumable.tres"
 
 [sub_resource type="Resource" id="option_3"]
 script = ExtResource("2")
 label = "消耗附魔"
 description = "选择一张卡牌，使用后不再回到卡组循环"
-effects = Array[ExtResource("3")]([SubResource("effect_3")])
+effects = Array[ExtResource("3")]([SubResource("effect_3"), SubResource("Resource_17als")])
 
 [resource]
 script = ExtResource("1")

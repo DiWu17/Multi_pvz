@@ -23,8 +23,8 @@ const BATTLE_CONFIG: Dictionary = {
 	},
 	## ELITE: 精英战斗
 	RogueMapNode.RoomType.ELITE: {
-		"min_waves": 1,
-		"max_waves": 3,
+		"min_waves": 2,
+		"max_waves": 5,
 		"min_zombies_per_wave": 4,
 		"max_zombies_per_wave": 8,
 		"hp_multiplier": 1.3,

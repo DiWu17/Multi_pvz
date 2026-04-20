@@ -81,7 +81,7 @@ func end_run() -> void:
 
 # --- Deck helpers ---
 
-## Add plants to deck (e.g. as reward)
+## 添加植物卡到牌组（如事件奖励）
 func add_plant(plant_type: CharacterRegistry.PlantType, count: int = 1) -> void:
 	deck[plant_type] = deck.get(plant_type, 0) + count
 	if not card_uids.has(plant_type):
@@ -91,7 +91,7 @@ func add_plant(plant_type: CharacterRegistry.PlantType, count: int = 1) -> void:
 		_next_card_uid += 1
 	deck_changed.emit()
 
-## Remove one stock of a plant (consumed during battle). Returns false if no stock.
+## 移除植物卡（如事件惩罚），返回是否成功（如果卡牌不足则失败）
 func consume_plant(plant_type: CharacterRegistry.PlantType) -> bool:
 	var current: int = deck.get(plant_type, 0)
 	if current <= 0:
@@ -114,8 +114,8 @@ func get_deck_size() -> int:
 		total += count
 	return total
 
-## Build conveyor belt probability dict from current deck
-## Returns Dictionary[CharacterRegistry.PlantType, int] suitable for ResourceLevelData.all_card_plant_type_probability
+## 检查牌组中是否有某种植物卡
+## 返回 Dictionary[PlantType, int]，表示每种植物在传送带上出现的权重（基于当前牌组）
 func build_conveyor_probabilities() -> Dictionary[CharacterRegistry.PlantType, int]:
 	var probs: Dictionary[CharacterRegistry.PlantType, int] = {}
 	for plant_type in deck:
@@ -135,7 +135,7 @@ func get_all_card_instances() -> Array:
 			})
 	return result
 
-# --- Gold helpers ---
+# --- 金币 ---
 func add_gold(amount: int) -> void:
 	gold += amount
 	gold_changed.emit()
@@ -148,16 +148,6 @@ func spend_gold(amount: int) -> bool:
 	return true
 
 # --- Buff / Relic 桥接 API (兼容旧代码, 推荐直接使用 RogueBuffManager) ---
-
-## 通过旧式字典添加 buff (已废弃，buff 已重构为卡牌附魔)
-func add_buff(buff_id: String, buff_name: String, description: String, params: Dictionary = {}) -> void:
-	push_warning("[RogueState] add_buff() 已废弃，buff 系统已重构为卡牌附魔系统")
-
-func remove_buff(buff_id: String) -> void:
-	push_warning("[RogueState] remove_buff() 已废弃")
-
-func has_buff(buff_id: String) -> bool:
-	return false
 
 ## 通过旧式字典添加遗物 (向后兼容)
 func add_relic(relic_id: String, relic_name: String, description: String, params: Dictionary = {}) -> void:
@@ -183,6 +173,3 @@ func add_card_enchant(plant_type: CharacterRegistry.PlantType, enchant: BuffData
 	if card_uids.has(plant_type):
 		for uid in card_uids[plant_type]:
 			RogueBuffManager.add_instance_enchant(uid, enchant)
-
-func add_buff_resource(buff: BuffData) -> void:
-	push_warning("[RogueState] add_buff_resource() 已废弃，请使用 add_card_enchant()")

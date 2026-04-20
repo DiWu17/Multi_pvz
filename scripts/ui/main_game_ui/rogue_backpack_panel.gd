@@ -28,27 +28,8 @@ func _on_close() -> void:
 	hide()
 
 func _refresh() -> void:
-	_refresh_buffs()
 	_refresh_relics()
 	_refresh_deck()
-
-#region Buff
-func _refresh_buffs() -> void:
-	for child in buff_container.get_children():
-		child.queue_free()
-
-	var buffs := RogueBuffManager.get_buffs()
-	if buffs.is_empty():
-		var lbl := Label.new()
-		lbl.text = "暂无Buff"
-		lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-		buff_container.add_child(lbl)
-		return
-
-	for buff in buffs:
-		var item := _create_item_card(buff.display_name, buff.description, buff.icon)
-		buff_container.add_child(item)
-#endregion
 
 #region Relic
 func _refresh_relics() -> void:
