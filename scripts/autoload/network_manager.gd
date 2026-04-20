@@ -43,6 +43,7 @@ const NET_PROBE_TIMEOUT_MS := 2500
 
 # WebRTC 常量
 const DEFAULT_WEBRTC_SIGNALING_URL := "ws://localhost:8080"
+const WEBRTC_GDEXTENSION_PATH := "res://addons/webrtc/webrtc.gdextension"
 const WEBRTC_ICE_SERVERS := [
 	{"urls": ["stun:stun.l.google.com:19302"]},
 	{"urls": ["stun:stun1.l.google.com:19302"]},
@@ -121,8 +122,6 @@ var _webrtc_local_peer_id: int = 0
 var _webrtc_pending_init_msg: Dictionary = {}
 ## 最近一次网络错误描述
 var _last_network_error_message: String = ""
-## WebRTC 可用性探测缓存
-var _webrtc_support_checked: bool = false
 var _webrtc_supported: bool = false
 var _webrtc_support_error_message: String = ""
 #endregion
@@ -372,22 +371,25 @@ func get_webrtc_unavailable_reason() -> String:
 		return ""
 	return _webrtc_support_error_message
 
-func _ensure_webrtc_available() -> Error:
-	if _webrtc_support_checked:
-		if _webrtc_supported:
-			_set_last_network_error("")
-			return OK
-		_set_last_network_error(_webrtc_support_error_message)
-		return ERR_UNAVAILABLE
+func has_webrtc_native_plugin() -> bool:
+	return ResourceLoader.exists(WEBRTC_GDEXTENSION_PATH)
 
-	_webrtc_support_checked = true
-	_webrtc_supported = false
+func _build_webrtc_support_error(base_message: String) -> String:
+	if has_webrtc_native_plugin():
+		return "%s。已检测到 addons/webrtc/webrtc.gdextension，但当前运行时仍未成功加载原生库。请重启 Godot 编辑器/游戏，并确认使用的编辑器或导出模板与 DLL 架构匹配" % base_message
+	return "%s。当前项目未检测到 addons/webrtc/webrtc.gdextension，请先安装 Godot WebRTC GDExtension/原生插件" % base_message
+
+func _ensure_webrtc_available() -> Error:
+	if _webrtc_supported:
+		_set_last_network_error("")
+		return OK
+
 	_webrtc_support_error_message = ""
 
 	var probe_peer := WebRTCMultiplayerPeer.new()
 	var create_mesh_error := probe_peer.create_mesh(1)
 	if create_mesh_error != OK:
-		_webrtc_support_error_message = "当前环境无法初始化 WebRTC mesh，可能缺少桌面端 WebRTC 原生扩展"
+		_webrtc_support_error_message = _build_webrtc_support_error("当前环境无法初始化 WebRTC mesh")
 		_set_last_network_error(_webrtc_support_error_message)
 		return ERR_UNAVAILABLE
 
@@ -397,7 +399,7 @@ func _ensure_webrtc_available() -> Error:
 	})
 	if init_error != OK:
 		probe_peer.close()
-		_webrtc_support_error_message = "当前环境无法初始化 WebRTC PeerConnection，可能缺少桌面端 WebRTC 原生扩展"
+		_webrtc_support_error_message = _build_webrtc_support_error("当前环境无法初始化 WebRTC PeerConnection")
 		_set_last_network_error(_webrtc_support_error_message)
 		return ERR_UNAVAILABLE
 
@@ -405,7 +407,7 @@ func _ensure_webrtc_available() -> Error:
 	probe_connection.close()
 	probe_peer.close()
 	if add_peer_error != OK:
-		_webrtc_support_error_message = "当前桌面构建缺少 WebRTC 原生后端，无法建立点对点连接。请安装 Godot WebRTC GDExtension/原生插件，或改用服务器中转模式"
+		_webrtc_support_error_message = _build_webrtc_support_error("当前运行时无法建立 WebRTC 点对点连接")
 		_set_last_network_error(_webrtc_support_error_message)
 		return ERR_UNAVAILABLE
 
@@ -685,9 +687,7 @@ func _on_webrtc_signal_message(msg: Dictionary) -> void:
 					if offer_error != OK:
 						push_error("NetworkManager: WebRTC set_remote_description(offer) 失败，peer=%d 错误码=%d" % [from_id, offer_error])
 						return
-					var answer_create_error: int = offer_conn.create_answer()
-					if answer_create_error != OK:
-						push_error("NetworkManager: WebRTC create_answer 失败，peer=%d 错误码=%d" % [from_id, answer_create_error])
+					print("[WebRTC] offer 已设置到远端描述，等待 session_description_created 自动生成 answer: peer=%d" % from_id)
 
 		"peer_answer":
 			var from_id: int = msg.get("from_id", -1)

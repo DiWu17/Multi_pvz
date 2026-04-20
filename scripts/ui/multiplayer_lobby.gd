@@ -160,15 +160,19 @@ func _on_btn_join_pressed() -> void:
 #region WebRTC 方法 (新增)
 
 func _refresh_webrtc_ui_state() -> void:
-	if not NetworkManager.is_webrtc_available():
-		var reason := NetworkManager.get_webrtc_unavailable_reason()
-		if btn_webrtc_create:
-			btn_webrtc_create.disabled = true
-		if btn_webrtc_join:
-			btn_webrtc_join.disabled = true
-		if label_webrtc_room_code:
-			label_webrtc_room_code.text = reason
-			label_webrtc_room_code.add_theme_color_override("font_color", Color(1.0, 0.45, 0.35))
+	var available := NetworkManager.is_webrtc_available()
+	if btn_webrtc_create:
+		btn_webrtc_create.disabled = not available
+	if btn_webrtc_join:
+		btn_webrtc_join.disabled = not available
+	if not label_webrtc_room_code:
+		return
+	if available:
+		label_webrtc_room_code.text = "房间码将显示在这里..."
+		return
+	var reason := NetworkManager.get_webrtc_unavailable_reason()
+	label_webrtc_room_code.text = reason
+	label_webrtc_room_code.add_theme_color_override("font_color", Color(1.0, 0.45, 0.35))
 
 ## 创建 WebRTC tab UI
 func _create_webrtc_tab() -> void:
