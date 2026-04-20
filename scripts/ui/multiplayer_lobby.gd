@@ -23,14 +23,13 @@ extends Control
 @onready var input_relay_room_code: LineEdit = $PanelMain/MarginContainer/VBoxContainer/TabContainer/服务器中转/VBoxContainer/InputRelayRoomCode
 @onready var btn_relay_join: Button = $PanelMain/MarginContainer/VBoxContainer/TabContainer/服务器中转/VBoxContainer/BtnRelayJoin
 
-# WebRTC tab (新增)
-var input_webrtc_signaling_url: LineEdit = null
-var input_webrtc_name: LineEdit = null
-var btn_webrtc_create: Button = null
-var input_webrtc_room_code: LineEdit = null
-var btn_webrtc_join: Button = null
-var label_webrtc_room_code: Label = null  # 显示生成的房间码
-var _webrtc_player_list: VBoxContainer = null  # 显示房间内玩家列表
+# WebRTC tab
+@onready var input_webrtc_address: LineEdit = $PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer/InputWebRTCAddress
+@onready var input_webrtc_port: SpinBox = $PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer/InputWebRTCPort
+@onready var input_webrtc_name: LineEdit = $PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer/InputWebRTCName
+@onready var btn_webrtc_create: Button = $PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer/BtnWebRTCCreate
+@onready var input_webrtc_room_code: LineEdit = $PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer/InputWebRTCRoomCode
+@onready var btn_webrtc_join: Button = $PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer/BtnWebRTCJoin
 
 @onready var btn_back: Button = $PanelMain/MarginContainer/VBoxContainer/HBoxTitle/BtnBack
 # 大厅 panel
@@ -63,13 +62,11 @@ func _ready() -> void:
 	btn_join.pressed.connect(_on_btn_join_pressed)
 	btn_relay_create.pressed.connect(_on_btn_relay_create_pressed)
 	btn_relay_join.pressed.connect(_on_btn_relay_join_pressed)
+	btn_webrtc_create.pressed.connect(_on_btn_webrtc_create_pressed)
+	btn_webrtc_join.pressed.connect(_on_btn_webrtc_join_pressed)
 	btn_ready.pressed.connect(_on_btn_ready_pressed)
 	btn_start.pressed.connect(_on_btn_start_pressed)
 	btn_leave.pressed.connect(_on_btn_leave_pressed)
-
-	# 创建 WebRTC tab UI
-	_create_webrtc_tab()
-	_refresh_webrtc_ui_state()
 
 	NetworkManager.player_joined.connect(_on_player_joined)
 	NetworkManager.player_left.connect(_on_player_left)
@@ -86,6 +83,7 @@ func _ready() -> void:
 
 	input_port.value = NetworkManager.DEFAULT_PORT
 	input_join_port.value = NetworkManager.DEFAULT_PORT
+	input_webrtc_port.value = 8080
 
 ## 返回主菜单
 func _on_btn_back_pressed() -> void:
@@ -159,160 +157,20 @@ func _on_btn_join_pressed() -> void:
 
 #region WebRTC 方法 (新增)
 
-func _refresh_webrtc_ui_state() -> void:
-	var available := NetworkManager.is_webrtc_available()
-	if btn_webrtc_create:
-		btn_webrtc_create.disabled = not available
-	if btn_webrtc_join:
-		btn_webrtc_join.disabled = not available
-	if not label_webrtc_room_code:
-		return
-	if available:
-		label_webrtc_room_code.text = "房间码将显示在这里..."
-		return
-	var reason := NetworkManager.get_webrtc_unavailable_reason()
-	label_webrtc_room_code.text = reason
-	label_webrtc_room_code.add_theme_color_override("font_color", Color(1.0, 0.45, 0.35))
-
-## 创建 WebRTC tab UI
-func _create_webrtc_tab() -> void:
-	# 检查是否已有 WebRTC tab，没有则动态创建
-	var webrtc_tab = tab_container.get_node_or_null("WebRTC")
-	if webrtc_tab != null:
-		# 直接引用现有的 tab
-		var vbox = webrtc_tab.get_node("VBoxContainer")
-		if vbox:
-			input_webrtc_signaling_url = vbox.get_node_or_null("InputSignalingUrl")
-			input_webrtc_name = vbox.get_node_or_null("InputName")
-			btn_webrtc_create = vbox.get_node_or_null("BtnCreate")
-			input_webrtc_room_code = vbox.get_node_or_null("InputRoomCode")
-			btn_webrtc_join = vbox.get_node_or_null("BtnJoin")
-			label_webrtc_room_code = vbox.get_node_or_null("LabelRoomCode")
-			
-			if btn_webrtc_create:
-				btn_webrtc_create.pressed.connect(_on_btn_webrtc_create_pressed)
-			if btn_webrtc_join:
-				btn_webrtc_join.pressed.connect(_on_btn_webrtc_join_pressed)
-		return
-	
-	# 如果不存在，则动态创建
-	var panel_container = PanelContainer.new()
-	panel_container.name = "WebRTC"
-	
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_bottom", 10)
-	panel_container.add_child(margin)
-	
-	var vbox = VBoxContainer.new()
-	vbox.name = "VBoxContainer"
-	margin.add_child(vbox)
-	
-	# 标题
-	var title = Label.new()
-	title.text = "🔴 WebRTC 点对点连接 (低延迟，推荐)"
-	title.add_theme_font_size_override("font_size", 16)
-	vbox.add_child(title)
-	
-	var separator1 = HSeparator.new()
-	vbox.add_child(separator1)
-	
-	# 信令服务器地址
-	var signaling_label = Label.new()
-	signaling_label.text = "信令服务器 (Signaling URL):"
-	vbox.add_child(signaling_label)
-	
-	input_webrtc_signaling_url = LineEdit.new()
-	input_webrtc_signaling_url.name = "InputSignalingUrl"
-	input_webrtc_signaling_url.placeholder_text = "ws://localhost:8080"
-	input_webrtc_signaling_url.text = "ws://127.0.0.1:8080"
-	vbox.add_child(input_webrtc_signaling_url)
-	
-	# 玩家名
-	var name_label = Label.new()
-	name_label.text = "玩家名称:"
-	vbox.add_child(name_label)
-	
-	input_webrtc_name = LineEdit.new()
-	input_webrtc_name.name = "InputName"
-	input_webrtc_name.placeholder_text = "输入你的名字"
-	input_webrtc_name.text = "Player"
-	vbox.add_child(input_webrtc_name)
-	
-	var separator2 = HSeparator.new()
-	vbox.add_child(separator2)
-	
-	# 创建房间
-	var create_section = Label.new()
-	create_section.text = "【创建房间 - 作为主机(Host)】"
-	create_section.add_theme_font_size_override("font_size", 12)
-	vbox.add_child(create_section)
-	
-	btn_webrtc_create = Button.new()
-	btn_webrtc_create.name = "BtnCreate"
-	btn_webrtc_create.text = "创建 WebRTC 房间"
-	btn_webrtc_create.pressed.connect(_on_btn_webrtc_create_pressed)
-	vbox.add_child(btn_webrtc_create)
-	
-	# 显示房间码
-	label_webrtc_room_code = Label.new()
-	label_webrtc_room_code.name = "LabelRoomCode"
-	label_webrtc_room_code.text = "房间码将显示在这里..."
-	label_webrtc_room_code.add_theme_color_override("font_color", Color.YELLOW)
-	vbox.add_child(label_webrtc_room_code)
-	
-	var separator3 = HSeparator.new()
-	vbox.add_child(separator3)
-	
-	# 加入房间
-	var join_section = Label.new()
-	join_section.text = "【加入房间 - 作为客户端(Client)】"
-	join_section.add_theme_font_size_override("font_size", 12)
-	vbox.add_child(join_section)
-	
-	var room_code_label = Label.new()
-	room_code_label.text = "房间码 (从主机处获得):"
-	vbox.add_child(room_code_label)
-	
-	input_webrtc_room_code = LineEdit.new()
-	input_webrtc_room_code.name = "InputRoomCode"
-	input_webrtc_room_code.placeholder_text = "输入房间码"
-	input_webrtc_room_code.text = ""
-	vbox.add_child(input_webrtc_room_code)
-	
-	btn_webrtc_join = Button.new()
-	btn_webrtc_join.name = "BtnJoin"
-	btn_webrtc_join.text = "加入 WebRTC 房间"
-	btn_webrtc_join.pressed.connect(_on_btn_webrtc_join_pressed)
-	vbox.add_child(btn_webrtc_join)
-	
-	var separator4 = HSeparator.new()
-	vbox.add_child(separator4)
-	
-	# 玩家列表（WebRTC 中显示）
-	var players_label = Label.new()
-	players_label.text = "【房间内玩家】"
-	players_label.add_theme_font_size_override("font_size", 12)
-	vbox.add_child(players_label)
-	
-	_webrtc_player_list = VBoxContainer.new()
-	_webrtc_player_list.name = "WebRTCPlayerList"
-	vbox.add_child(_webrtc_player_list)
-	
-	# 添加到 tab 容器
-	tab_container.add_child(panel_container)
+func _get_webrtc_signaling_url() -> String:
+	var address = input_webrtc_address.text.strip_edges()
+	if address.is_empty():
+		address = "127.0.0.1"
+	var port = int(input_webrtc_port.value)
+	return "ws://%s:%d" % [address, port]
 
 ## WebRTC 创建房间
 func _on_btn_webrtc_create_pressed() -> void:
 	var player_name = input_webrtc_name.text.strip_edges()
 	if player_name.is_empty():
 		player_name = "Host"
-	
-	var signaling_url = input_webrtc_signaling_url.text.strip_edges()
-	if signaling_url.is_empty():
-		signaling_url = "ws://127.0.0.1:8080"
+
+	var signaling_url = _get_webrtc_signaling_url()
 	
 	label_status.text = "正在连接 WebRTC 信令服务器: %s..." % signaling_url
 	print("WebRTC: 创建房间，玩家名: %s，信令地址: %s" % [player_name, signaling_url])
@@ -328,10 +186,8 @@ func _on_btn_webrtc_join_pressed() -> void:
 	var player_name = input_webrtc_name.text.strip_edges()
 	if player_name.is_empty():
 		player_name = "Player"
-	
-	var signaling_url = input_webrtc_signaling_url.text.strip_edges()
-	if signaling_url.is_empty():
-		signaling_url = "ws://127.0.0.1:8080"
+
+	var signaling_url = _get_webrtc_signaling_url()
 	
 	var room_code = input_webrtc_room_code.text.strip_edges().to_upper()
 	if room_code.is_empty():
@@ -348,17 +204,9 @@ func _on_btn_webrtc_join_pressed() -> void:
 
 ## WebRTC 房间创建成功回调
 func _on_webrtc_room_created(room_code: String) -> void:
-	print("UI: WebRTC 房间创建成功回调收到，房间码: ", room_code)
-	print("UI: label_webrtc_room_code 是否为 null: ", label_webrtc_room_code == null)
-	if label_webrtc_room_code:
-		print("UI: 更新房间码标签为: ", room_code)
-		label_webrtc_room_code.text = "✓ 房间码: [%s]\n(已生成，分享给其他玩家)" % room_code
-	else:
-		print("UI: 警告！label_webrtc_room_code 为 null，无法显示房间码")
-
 	_show_lobby()
 	btn_start.visible = true
-	label_status.text = "WebRTC 房间码: %s | 等待玩家加入..." % room_code
+	label_status.text = "房间码: %s | 等待玩家加入..." % room_code
 
 #endregion
 
@@ -370,7 +218,6 @@ func _show_lobby() -> void:
 	btn_start.disabled = true
 	_create_mode_selector()
 	_refresh_player_list()
-	_refresh_webrtc_player_list()
 
 ## 创建游戏模式选择器（仅 Host 可操作）
 func _create_mode_selector() -> void:
@@ -446,31 +293,14 @@ func _refresh_player_list() -> void:
 		player_list.add_child(hbox)
 
 	var status_text = "玩家数: %d / %d" % [NetworkManager.player_count, NetworkManager.MAX_PLAYERS]
-
+	
 	# 显示房间码（支持 Relay 和 WebRTC）
 	if NetworkManager.relay_room_code != "":
 		status_text = "中继房间码: %s | %s" % [NetworkManager.relay_room_code, status_text]
 	elif NetworkManager.webrtc_room_code != "":
 		status_text = "WebRTC 房间码: %s | %s" % [NetworkManager.webrtc_room_code, status_text]
-
+	
 	label_status.text = status_text
-
-## 刷新 WebRTC 玩家列表
-func _refresh_webrtc_player_list() -> void:
-	if not _webrtc_player_list:
-		return
-	
-	# 清空
-	for child in _webrtc_player_list.get_children():
-		child.queue_free()
-	
-	# 添加所有玩家
-	for peer_id in NetworkManager.players:
-		var info = NetworkManager.players[peer_id]
-		var player_label = Label.new()
-		var status_text = "✓ 已准备" if info.get("is_ready", false) else "⧖ 未准备"
-		player_label.text = "• %s (Peer %d) %s" % [info.get("name", "Unknown"), peer_id, status_text]
-		_webrtc_player_list.add_child(player_label)
 
 ## 准备
 func _on_btn_ready_pressed() -> void:
@@ -496,15 +326,12 @@ func _on_relay_room_created(room_code: String) -> void:
 #region 网络回调
 func _on_player_joined(_peer_id: int, _info: Dictionary) -> void:
 	_refresh_player_list()
-	_refresh_webrtc_player_list()
 
 func _on_player_left(_peer_id: int) -> void:
 	_refresh_player_list()
-	_refresh_webrtc_player_list()
 
 func _on_player_list_updated() -> void:
 	_refresh_player_list()
-	_refresh_webrtc_player_list()
 
 func _on_server_connected() -> void:
 	_show_lobby()

@@ -194,7 +194,66 @@ placeholder_text = "ABCD"
 layout_mode = 2
 text = "加入中转房间"
 
+[node name="WebRTC" type="MarginContainer" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer" unique_id=1702045301]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+metadata/_tab_index = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC" unique_id=1993834877]
+layout_mode = 2
+
+[node name="LabelAddr" type="Label" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=1518136167]
+layout_mode = 2
+text = "信令服务器地址："
+
+[node name="InputWebRTCAddress" type="LineEdit" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=1333181065]
+layout_mode = 2
+text = "127.0.0.1"
+placeholder_text = "127.0.0.1"
+
+[node name="LabelPort" type="Label" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=1896370460]
+layout_mode = 2
+text = "端口："
+
+[node name="InputWebRTCPort" type="SpinBox" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=381243061]
+layout_mode = 2
+min_value = 1024.0
+max_value = 65535.0
+value = 8080.0
+
+[node name="LabelName" type="Label" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=116413102]
+layout_mode = 2
+text = "玩家昵称："
+
+[node name="InputWebRTCName" type="LineEdit" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=1585014443]
+layout_mode = 2
+placeholder_text = "Player"
+
+[node name="BtnWebRTCCreate" type="Button" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=1394591420]
+layout_mode = 2
+text = "创建 WebRTC 房间"
+
+[node name="HSeparator" type="HSeparator" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=1120451259]
+layout_mode = 2
+
+[node name="LabelRoomCode" type="Label" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=559050836]
+layout_mode = 2
+text = "房间码（加入时填写）："
+
+[node name="InputWebRTCRoomCode" type="LineEdit" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=1580410085]
+layout_mode = 2
+placeholder_text = "ABCD"
+
+[node name="BtnWebRTCJoin" type="Button" parent="PanelMain/MarginContainer/VBoxContainer/TabContainer/WebRTC/VBoxContainer" unique_id=497203056]
+layout_mode = 2
+text = "加入 WebRTC 房间"
+
 [node name="PanelLobby" type="PanelContainer" parent="." unique_id=2067325625]
+visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
